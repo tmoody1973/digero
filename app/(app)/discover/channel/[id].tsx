@@ -119,6 +119,23 @@ function getCategoryColor(category: string): string {
   }
 }
 
+/**
+ * Channel data structure for both DB and API channels
+ */
+interface ChannelDisplayData {
+  _id?: Id<"youtubeChannels">;
+  youtubeChannelId: string;
+  name: string;
+  avatarUrl: string;
+  bannerUrl?: string;
+  subscriberCount: number;
+  description: string;
+  videoCount: number;
+  category: string;
+  isFeatured: boolean;
+  isFollowing: boolean;
+}
+
 export default function ChannelDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -128,6 +145,11 @@ export default function ChannelDetailScreen() {
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
+
+  // State for channels fetched from YouTube API (not in database)
+  const [apiChannel, setApiChannel] = useState<ChannelDisplayData | null>(null);
+  const [isLoadingApiChannel, setIsLoadingApiChannel] = useState(false);
+  const [apiChannelError, setApiChannelError] = useState<string | null>(null);
 
   // Video player state
   const [playerVisible, setPlayerVisible] = useState(false);
@@ -157,15 +179,67 @@ export default function ChannelDetailScreen() {
   );
 
   // Use whichever query returned data
-  const channel = isConvexId ? channelByConvexId : channelByYoutubeId;
+  const dbChannel = isConvexId ? channelByConvexId : channelByYoutubeId;
   const followChannel = useMutation(api.channels.followChannel);
   const unfollowChannel = useMutation(api.channels.unfollowChannel);
   const saveFromYouTube = useMutation(api.recipes.saveFromYouTube);
+
+  // Action to fetch channel from YouTube API
+  const fetchChannelData = useAction(
+    api.actions.youtube.fetchChannelData.fetchChannelData
+  );
 
   // Convex actions
   const getChannelVideos = useAction(
     api.actions.youtube.fetchChannelData.getChannelVideos
   );
+
+  // Determine the channel to display (from DB or API)
+  const channel: ChannelDisplayData | null | undefined = dbChannel ?? apiChannel;
+
+  // Fetch channel from YouTube API if not in database
+  useEffect(() => {
+    // Only fetch from API if:
+    // 1. It's a YouTube channel ID (starts with UC)
+    // 2. DB query has completed (not undefined)
+    // 3. Channel not found in DB (null)
+    // 4. We haven't already fetched or aren't loading
+    if (
+      !isConvexId &&
+      id?.startsWith("UC") &&
+      dbChannel === null &&
+      !apiChannel &&
+      !isLoadingApiChannel &&
+      !apiChannelError
+    ) {
+      setIsLoadingApiChannel(true);
+      fetchChannelData({ channelId: id })
+        .then((result) => {
+          if (result.success && result.data) {
+            setApiChannel({
+              youtubeChannelId: result.data.channelId,
+              name: result.data.name,
+              avatarUrl: result.data.avatarUrl,
+              subscriberCount: result.data.subscriberCount,
+              description: result.data.description,
+              videoCount: result.data.videoCount,
+              category: "General",
+              isFeatured: false,
+              isFollowing: false,
+            });
+          } else {
+            setApiChannelError(result.error?.message || "Channel not found");
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching channel from API:", err);
+          setApiChannelError("Failed to load channel");
+        })
+        .finally(() => {
+          setIsLoadingApiChannel(false);
+        });
+    }
+  }, [id, isConvexId, dbChannel, apiChannel, isLoadingApiChannel, apiChannelError, fetchChannelData]);
 
   // Fetch videos when channel data is available
   useEffect(() => {
@@ -223,7 +297,7 @@ export default function ChannelDetailScreen() {
   }, [channel, followChannel]);
 
   const handleUnfollow = useCallback(async () => {
-    if (!channel) return;
+    if (!channel || !channel._id) return;
 
     try {
       await unfollowChannel({
@@ -280,17 +354,27 @@ export default function ChannelDetailScreen() {
     setIsRefreshing(false);
   }, [fetchVideos]);
 
-  // Loading state
-  if (channel === undefined) {
+  // Loading state - wait for DB query and potentially API fetch
+  const isLoading =
+    (isConvexId && channelByConvexId === undefined) ||
+    (!isConvexId && channelByYoutubeId === undefined) ||
+    isLoadingApiChannel;
+
+  if (isLoading) {
     return (
       <View className="flex-1 bg-stone-950 items-center justify-center">
         <ActivityIndicator size="large" color="#f97316" />
+        <Text className="text-stone-400 mt-4">Loading channel...</Text>
       </View>
     );
   }
 
-  // Not found state
-  if (channel === null) {
+  // Not found state - only show if DB query returned null AND API fetch failed/returned null
+  const notFound =
+    channel === null ||
+    (channel === undefined && apiChannelError);
+
+  if (notFound) {
     return (
       <SafeAreaView className="flex-1 bg-stone-950" edges={["top"]}>
         <View className="flex-row items-center px-4 py-3 border-b border-stone-800">
@@ -303,7 +387,7 @@ export default function ChannelDetailScreen() {
             Channel Not Found
           </Text>
           <Text className="text-stone-400 text-center mb-6">
-            This channel may have been removed or is no longer available.
+            {apiChannelError || "This channel may have been removed or is no longer available."}
           </Text>
           <Pressable
             onPress={handleBack}
@@ -314,6 +398,11 @@ export default function ChannelDetailScreen() {
         </View>
       </SafeAreaView>
     );
+  }
+
+  // Safety check - should not reach here if channel is null/undefined
+  if (!channel) {
+    return null;
   }
 
   return (
@@ -341,6 +430,17 @@ export default function ChannelDetailScreen() {
           />
         }
       >
+        {/* Banner Image */}
+        {channel.bannerUrl && (
+          <View className="w-full aspect-[6/1] overflow-hidden">
+            <Image
+              source={{ uri: channel.bannerUrl }}
+              className="w-full h-full"
+              resizeMode="cover"
+            />
+          </View>
+        )}
+
         {/* Channel Info Card */}
         <View className="m-4 bg-stone-900 rounded-2xl p-6 border border-stone-800">
           <View className="flex-row items-start gap-4">
