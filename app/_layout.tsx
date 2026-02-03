@@ -13,14 +13,10 @@ import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
+import { ShareIntentProvider } from "expo-share-intent";
 import { tokenCache } from "@/lib/token-cache";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import {
-  parseDeepLink,
-  getInitialShareUrl,
-  subscribeToShareLinks,
-  ShareContext,
-} from "@/lib/shareExtension";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Initialize Convex client
 const convex = new ConvexReactClient(
@@ -48,52 +44,6 @@ function InitialLayout() {
 
   // Debug logging
   console.log("[Auth Debug] isLoaded:", isLoaded, "isSignedIn:", isSignedIn, "segments:", JSON.stringify(segments));
-
-  /**
-   * Handle share context (from deep link or share extension)
-   */
-  const handleShareContext = useCallback(
-    (context: ShareContext) => {
-      if (context.isFromShare && context.sharedUrl && isSignedIn) {
-        // Navigate to import screen with the shared URL
-        router.push({
-          pathname: "/(app)/recipes/import",
-          params: {
-            url: context.sharedUrl,
-            autoExtract: "true",
-          },
-        });
-      }
-    },
-    [isSignedIn, router]
-  );
-
-  /**
-   * Check for initial deep link on app launch
-   */
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-
-    const checkInitialUrl = async () => {
-      const initialUrl = await getInitialShareUrl();
-      if (initialUrl) {
-        const context = parseDeepLink(initialUrl);
-        handleShareContext(context);
-      }
-    };
-
-    checkInitialUrl();
-  }, [isLoaded, isSignedIn, handleShareContext]);
-
-  /**
-   * Subscribe to incoming deep links while app is running
-   */
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-
-    const unsubscribe = subscribeToShareLinks(handleShareContext);
-    return unsubscribe;
-  }, [isLoaded, isSignedIn, handleShareContext]);
 
   /**
    * Auth-based navigation
@@ -131,12 +81,16 @@ function InitialLayout() {
 export default function RootLayout() {
   console.log("[RootLayout] Rendering...");
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <SubscriptionProvider>
-          <InitialLayout />
-        </SubscriptionProvider>
-      </ConvexProviderWithClerk>
-    </ClerkProvider>
+    <ShareIntentProvider>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <ThemeProvider>
+            <SubscriptionProvider>
+              <InitialLayout />
+            </SubscriptionProvider>
+          </ThemeProvider>
+        </ConvexProviderWithClerk>
+      </ClerkProvider>
+    </ShareIntentProvider>
   );
 }

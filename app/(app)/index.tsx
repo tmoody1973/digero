@@ -16,8 +16,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "convex/react";
+import { useColorScheme } from "nativewind";
 import { api } from "@/convex/_generated/api";
-import { Plus } from "lucide-react-native";
+import { Plus, Settings } from "lucide-react-native";
 
 import {
   SearchBar,
@@ -30,12 +31,15 @@ import {
   type SortOption,
   type ViewMode,
 } from "@/components/recipes/list";
+import { AddRecipeMenu } from "@/components/recipes";
 import { TabBar } from "@/components/navigation";
 
 type SourceFilter = "all" | "youtube" | "website" | "scanned" | "manual";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   // Filter and sort state
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +47,7 @@ export default function HomeScreen() {
   const [sortBy, setSortBy] = useState<SortOption>("mostRecent");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
 
   // Fetch recipes with current filters
   const recipesResult = useQuery(api.recipes.listRecipes, {
@@ -70,9 +75,30 @@ export default function HomeScreen() {
     [router]
   );
 
-  // Navigate to add recipe
+  // Show add recipe menu
   const handleAddRecipe = useCallback(() => {
+    setShowAddMenu(true);
+  }, []);
+
+  // Add recipe menu handlers
+  const handleManualEntry = useCallback(() => {
     router.push("/(app)/recipes/create");
+  }, [router]);
+
+  const handleWebsiteUrl = useCallback(() => {
+    router.push("/(app)/recipes/import");
+  }, [router]);
+
+  const handleYoutubeUrl = useCallback(() => {
+    router.push("/(app)/recipes/youtube-import");
+  }, [router]);
+
+  const handleYoutubeSearch = useCallback(() => {
+    router.push("/(app)/recipes/youtube-search");
+  }, [router]);
+
+  const handleScanPhoto = useCallback(() => {
+    router.push("/(app)/recipes/scan");
   }, [router]);
 
   // Clear all filters
@@ -100,11 +126,13 @@ export default function HomeScreen() {
   // Render recipe card
   const renderRecipeCard = useCallback(
     ({ item }: { item: (typeof recipes)[0] }) => (
-      <RecipeCard
-        recipe={item}
-        viewMode={viewMode}
-        onPress={() => handleRecipePress(item._id)}
-      />
+      <View className={viewMode === "grid" ? "flex-1" : "w-full"}>
+        <RecipeCard
+          recipe={item}
+          viewMode={viewMode}
+          onPress={() => handleRecipePress(item._id)}
+        />
+      </View>
     ),
     [viewMode, handleRecipePress]
   );
@@ -133,8 +161,17 @@ export default function HomeScreen() {
     <View className="flex-1 bg-stone-50 dark:bg-stone-950">
       {/* Header */}
       <View className="border-b border-stone-200 bg-white px-4 pb-4 pt-12 dark:border-stone-800 dark:bg-stone-900">
-        {/* App Title */}
-        <Text className="mb-4 text-2xl font-bold text-orange-500">Digero</Text>
+        {/* App Title & Settings */}
+        <View className="mb-4 flex-row items-center justify-between">
+          <Text className="text-2xl font-bold text-orange-500">Digero</Text>
+          <Pressable
+            onPress={() => router.push("/(app)/settings")}
+            className="rounded-full p-2 active:bg-stone-100 dark:active:bg-stone-800"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Settings size={24} color={isDark ? "#a8a29e" : "#57534e"} />
+          </Pressable>
+        </View>
 
         {/* Search Bar */}
         <SearchBar
@@ -177,7 +214,7 @@ export default function HomeScreen() {
           numColumns={viewMode === "grid" ? 2 : 1}
           key={viewMode} // Force re-render when changing view mode
           contentContainerClassName="p-4"
-          columnWrapperClassName={viewMode === "grid" ? "gap-4" : undefined}
+          columnWrapperStyle={viewMode === "grid" ? { gap: 16 } : undefined}
           ItemSeparatorComponent={() => <View className="h-4" />}
           refreshControl={
             <RefreshControl
@@ -199,11 +236,22 @@ export default function HomeScreen() {
         onPress={handleAddRecipe}
         className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-orange-500 shadow-lg active:bg-orange-600"
       >
-        <Plus className="h-6 w-6 text-white" />
+        <Plus size={24} color="#ffffff" />
       </Pressable>
 
       {/* Bottom Tab Bar */}
       <TabBar />
+
+      {/* Add Recipe Menu */}
+      <AddRecipeMenu
+        visible={showAddMenu}
+        onClose={() => setShowAddMenu(false)}
+        onManualEntry={handleManualEntry}
+        onWebsiteUrl={handleWebsiteUrl}
+        onYoutubeUrl={handleYoutubeUrl}
+        onYoutubeSearch={handleYoutubeSearch}
+        onScanPhoto={handleScanPhoto}
+      />
     </View>
   );
 }

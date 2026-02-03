@@ -4,7 +4,7 @@
  * Displays detailed view of a recipe with all sections.
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
@@ -36,10 +36,17 @@ import {
   DietaryConversionButtons,
   ActionButtons,
 } from "@/components/recipes/detail";
+import { AddToCookbookModal } from "@/components/cookbooks";
+import { TabBar } from "@/components/navigation";
+
+type DietType = "vegan" | "vegetarian" | "gluten-free";
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const [showAddToCookbookModal, setShowAddToCookbookModal] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertingType, setConvertingType] = useState<DietType | null>(null);
 
   const recipe = useQuery(api.recipes.get, {
     id: id as Id<"recipes">,
@@ -47,6 +54,7 @@ export default function RecipeDetailScreen() {
 
   const toggleFavorite = useMutation(api.recipes.toggleFavorite);
   const deleteRecipe = useMutation(api.recipes.deleteRecipe);
+  const convertRecipeDiet = useAction(api.actions.convertRecipeDiet.convertRecipeDiet);
 
   // Handle favorite toggle
   const handleFavoriteToggle = useCallback(async () => {
@@ -88,23 +96,74 @@ export default function RecipeDetailScreen() {
     router.push(`/(app)/recipes/${recipe._id}/cook-mode`);
   }, [recipe, router]);
 
+  // Shopping list mutation
+  const addToShoppingList = useMutation(api.shoppingLists.addIngredientsFromRecipe);
+
   // Handle add to shopping list
-  const handleAddToShoppingList = useCallback((ingredientIndexes: number[]) => {
-    // Shopping list functionality to be implemented
-    Alert.alert(
-      "Added to Shopping List",
-      `${ingredientIndexes.length} ingredient(s) added!`
-    );
-  }, []);
+  const handleAddToShoppingList = useCallback(async (ingredientIndexes: number[]) => {
+    if (!recipe) return;
+    try {
+      const result = await addToShoppingList({
+        recipeId: recipe._id,
+        ingredientIndexes,
+      });
+      Alert.alert(
+        "Added to Shopping List",
+        `${result.itemCount} ingredient(s) added to your shopping list!`,
+        [
+          { text: "OK" },
+          {
+            text: "View List",
+            onPress: () => router.push(`/(app)/shopping/${result.listId}`),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Failed to add to shopping list:", error);
+      Alert.alert("Error", "Failed to add ingredients. Please try again.");
+    }
+  }, [recipe, addToShoppingList, router]);
 
   // Handle dietary conversions
-  const handleConvertToVegan = useCallback(() => {
-    Alert.alert("Convert to Vegan", "This feature will be available soon!");
-  }, []);
+  const handleDietaryConversion = useCallback(async (dietType: DietType) => {
+    if (!recipe) return;
 
-  const handleConvertToVegetarian = useCallback(() => {
-    Alert.alert("Convert to Vegetarian", "This feature will be available soon!");
-  }, []);
+    setIsConverting(true);
+    setConvertingType(dietType);
+
+    try {
+      const result = await convertRecipeDiet({
+        recipeId: recipe._id,
+        dietType,
+        saveAsNew: false, // Update the current recipe
+      });
+
+      if (result.success) {
+        const changedIngredients = result.ingredients.filter(i => i.changed);
+        const changesSummary = changedIngredients.length > 0
+          ? `\n\nChanges made:\n${changedIngredients.slice(0, 4).map(i => `• ${i.original} → ${i.converted}`).join("\n")}${changedIngredients.length > 4 ? `\n...and ${changedIngredients.length - 4} more` : ""}`
+          : "\n\nNo ingredient changes needed!";
+
+        const tips = result.tips?.length > 0
+          ? `\n\nTips:\n${result.tips.slice(0, 2).map(t => `• ${t}`).join("\n")}`
+          : "";
+
+        Alert.alert(
+          `Converted to ${dietType.charAt(0).toUpperCase() + dietType.slice(1)}!`,
+          `Recipe updated successfully.${changesSummary}${tips}`,
+          [{ text: "OK" }]
+        );
+      } else {
+        Alert.alert("Conversion Failed", result.error || "Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed to convert recipe:", error);
+      Alert.alert("Error", "Failed to convert recipe. Please try again.");
+    } finally {
+      setIsConverting(false);
+      setConvertingType(null);
+    }
+  }, [recipe, convertRecipeDiet, router]);
 
   // Handle meal plan
   const handleAddToMealPlan = useCallback(() => {
@@ -113,7 +172,7 @@ export default function RecipeDetailScreen() {
 
   // Handle cookbook
   const handleAddToCookbook = useCallback(() => {
-    Alert.alert("Add to Cookbook", "This feature will be available soon!");
+    setShowAddToCookbookModal(true);
   }, []);
 
   // Loading state
@@ -245,8 +304,9 @@ export default function RecipeDetailScreen() {
 
         {/* Dietary Conversion */}
         <DietaryConversionButtons
-          onConvertToVegan={handleConvertToVegan}
-          onConvertToVegetarian={handleConvertToVegetarian}
+          onConvert={handleDietaryConversion}
+          isConverting={isConverting}
+          convertingType={convertingType}
         />
 
         {/* Ingredients */}
@@ -301,9 +361,23 @@ export default function RecipeDetailScreen() {
           onDelete={handleDelete}
         />
 
-        {/* Bottom padding */}
-        <View className="h-8" />
+        {/* Bottom padding for TabBar */}
+        <View className="h-20" />
       </ScrollView>
+
+      {/* Add to Cookbook Modal */}
+      <AddToCookbookModal
+        isOpen={showAddToCookbookModal}
+        recipeId={recipe._id}
+        onClose={() => setShowAddToCookbookModal(false)}
+        onSuccess={() => {
+          setShowAddToCookbookModal(false);
+          Alert.alert("Success", "Recipe added to cookbook!");
+        }}
+      />
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
     </View>
   );
 }

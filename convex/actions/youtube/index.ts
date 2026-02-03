@@ -17,3 +17,4 @@ export {
   extractRecipeFromYouTube,
   downloadThumbnail,
 } from "./extractRecipeFromYouTube";
+export { seedFeaturedChannelsFromYouTube } from "./seedFeaturedChannelsAction";

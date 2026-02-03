@@ -45,22 +45,45 @@ function isValidUrl(url: string): boolean {
 
 /**
  * Detect if the response indicates a paywall
+ *
+ * Uses more specific patterns to avoid false positives from
+ * newsletter signups and similar content on recipe sites.
  */
 function detectPaywall(html: string): boolean {
-  const paywallIndicators = [
+  const lowerHtml = html.toLowerCase();
+
+  // Strong paywall indicators - these are specific enough to not trigger on newsletters
+  const strongIndicators = [
     "subscription required",
-    "subscribe to continue",
-    "premium content",
+    "subscribe to continue reading",
+    "subscribe to read this",
     "paywall",
-    "sign in to read",
-    "members only",
-    "login to view",
-    "subscriber-only",
-    "create an account to",
+    "sign in to read the full",
+    "login to view full",
+    "subscriber-only content",
+    "subscribers only",
+    "create an account to read",
+    "become a member to access",
+    "this content is for members",
+    "unlock this article",
+    "to continue reading, subscribe",
   ];
 
-  const lowerHtml = html.toLowerCase();
-  return paywallIndicators.some((indicator) => lowerHtml.includes(indicator));
+  // Check if any strong indicator is present
+  if (strongIndicators.some((indicator) => lowerHtml.includes(indicator))) {
+    return true;
+  }
+
+  // Check for common paywall patterns in meta tags or specific elements
+  // These patterns suggest the main content is blocked
+  const paywallPatterns = [
+    /<meta[^>]*name=["']robots["'][^>]*content=["'][^"']*noindex[^"']*["']/i,
+    /class=["'][^"']*paywall[^"']*["']/i,
+    /id=["']paywall["']/i,
+    /data-paywall/i,
+  ];
+
+  return paywallPatterns.some((pattern) => pattern.test(html));
 }
 
 /**

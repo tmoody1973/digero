@@ -82,6 +82,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           "Allow Digero to access your photos to select recipe images",
       },
     ],
+    [
+      "expo-share-intent",
+      {
+        // iOS Share Extension configuration
+        iosActivationRules: {
+          NSExtensionActivationSupportsWebURLWithMaxCount: 1,
+          NSExtensionActivationSupportsText: true,
+        },
+        // Optional: customize the share extension name
+        // iosShareExtensionName: "Share to Digero",
+      },
+    ],
   ],
   extra: {
     router: {

@@ -354,6 +354,96 @@ export const addItem = mutation({
 });
 
 /**
+ * Add ingredients from a recipe to a shopping list
+ *
+ * Creates a new list if listId is not provided.
+ * Returns the list ID.
+ */
+export const addIngredientsFromRecipe = mutation({
+  args: {
+    listId: v.optional(v.id("shoppingLists")),
+    recipeId: v.id("recipes"),
+    ingredientIndexes: v.array(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = identity.subject;
+    const now = Date.now();
+
+    // Get the recipe
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe || recipe.userId !== userId) {
+      throw new Error("Recipe not found");
+    }
+
+    // Get or create shopping list
+    let listId = args.listId;
+
+    if (!listId) {
+      // Get the user's active shopping list, or create one
+      const activeList = await ctx.db
+        .query("shoppingLists")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .filter((q) => q.eq(q.field("status"), "active"))
+        .first();
+
+      if (activeList) {
+        listId = activeList._id;
+      } else {
+        // Create a new list
+        listId = await ctx.db.insert("shoppingLists", {
+          userId,
+          name: "Shopping List",
+          status: "active",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    } else {
+      // Verify list ownership
+      const list = await ctx.db.get(listId);
+      if (!list || list.userId !== userId) {
+        throw new Error("Shopping list not found");
+      }
+      if (list.status === "archived") {
+        throw new Error("Cannot add items to an archived list");
+      }
+    }
+
+    // Add selected ingredients
+    const selectedIngredients = args.ingredientIndexes.map(
+      (index) => recipe.ingredients[index]
+    ).filter(Boolean);
+
+    for (const ingredient of selectedIngredients) {
+      const category = assignCategory(ingredient.name);
+
+      await ctx.db.insert("shoppingItems", {
+        listId,
+        name: ingredient.name,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        category: category as ShoppingItemCategory,
+        checked: false,
+        isCustom: false,
+        recipeIds: [args.recipeId],
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // Update list timestamp
+    await ctx.db.patch(listId, { updatedAt: now });
+
+    return { listId, itemCount: selectedIngredients.length };
+  },
+});
+
+/**
  * Update an item's quantity, unit, or category
  */
 export const updateItem = mutation({

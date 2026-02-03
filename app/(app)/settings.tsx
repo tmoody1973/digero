@@ -16,15 +16,26 @@ import { useRouter } from "expo-router";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Sun, Moon, Smartphone, Check } from "lucide-react-native";
 import { DeleteAccountConfirmation } from "@/components/auth/DeleteAccountConfirmation";
 import { SubscriptionSection } from "@/components/subscription/SubscriptionSection";
 import { TabBar } from "@/components/navigation";
+import { useTheme } from "@/contexts/ThemeContext";
+
+type ThemeMode = "light" | "dark" | "system";
+
+const themeOptions: { mode: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { mode: "light", label: "Light", icon: Sun },
+  { mode: "dark", label: "Dark", icon: Moon },
+  { mode: "system", label: "System", icon: Smartphone },
+];
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { user: clerkUser } = useUser();
   const currentUser = useQuery(api.users.getCurrentUser);
+  const { themeMode, setThemeMode, isDark } = useTheme();
 
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -54,6 +65,61 @@ export default function SettingsScreen() {
       <ScrollView className="flex-1" contentContainerClassName="py-6">
         {/* Subscription Section */}
         <SubscriptionSection />
+
+        {/* Appearance Section */}
+        <View className="mb-6">
+          <Text className="px-6 text-sm font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+            Appearance
+          </Text>
+          <View className="bg-white dark:bg-stone-900 border-y border-stone-200 dark:border-stone-800">
+            <View className="flex-row">
+              {themeOptions.map((option, index) => {
+                const Icon = option.icon;
+                const isSelected = themeMode === option.mode;
+                return (
+                  <Pressable
+                    key={option.mode}
+                    onPress={() => setThemeMode(option.mode)}
+                    className={`flex-1 items-center py-4 ${
+                      index < themeOptions.length - 1
+                        ? "border-r border-stone-100 dark:border-stone-800"
+                        : ""
+                    }`}
+                  >
+                    <View
+                      className={`mb-2 rounded-full p-2 ${
+                        isSelected
+                          ? "bg-orange-100 dark:bg-orange-900/30"
+                          : "bg-stone-100 dark:bg-stone-800"
+                      }`}
+                    >
+                      <Icon
+                        size={20}
+                        className={
+                          isSelected
+                            ? "text-orange-500"
+                            : "text-stone-500 dark:text-stone-400"
+                        }
+                      />
+                    </View>
+                    <Text
+                      className={`text-sm font-medium ${
+                        isSelected
+                          ? "text-orange-500"
+                          : "text-stone-700 dark:text-stone-300"
+                      }`}
+                    >
+                      {option.label}
+                    </Text>
+                    {isSelected && (
+                      <Check size={14} className="text-orange-500 mt-1" />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
 
         {/* Account Section */}
         <View className="mb-6">

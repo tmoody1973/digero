@@ -11,6 +11,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { View, ActivityIndicator, Text } from "react-native";
 import { useEffect, useState } from "react";
+import { useShareIntentHandler } from "@/hooks/useShareIntent";
 
 export default function AppLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -18,6 +19,9 @@ export default function AppLayout() {
   const ensureUserExists = useMutation(api.users.ensureUserExists);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [userCreationError, setUserCreationError] = useState<string | null>(null);
+
+  // Handle URLs shared from other apps (YouTube, Safari, etc.)
+  useShareIntentHandler();
 
   // Debug logging
   console.log("[AppLayout] isLoaded:", isLoaded, "isSignedIn:", isSignedIn, "currentUser:", currentUser);

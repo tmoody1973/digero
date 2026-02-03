@@ -12,7 +12,7 @@ import {
   Compass,
   BookOpen,
   CalendarDays,
-  Settings,
+  ShoppingCart,
 } from "lucide-react-native";
 
 interface TabItem {
@@ -48,10 +48,10 @@ const tabs: TabItem[] = [
     path: "/(app)/meal-planner",
   },
   {
-    name: "settings",
-    label: "Settings",
-    icon: Settings,
-    path: "/(app)/settings",
+    name: "shopping",
+    label: "Shopping",
+    icon: ShoppingCart,
+    path: "/(app)/shopping",
   },
 ];
 
@@ -64,11 +64,11 @@ export function TabBar() {
       // Active when on home or recipe detail pages
       return pathname === "/" || pathname.startsWith("/recipes");
     }
-    if (tab.name === "settings") {
-      return pathname === "/settings";
-    }
     if (tab.name === "meal-planner") {
       return pathname.startsWith("/meal-planner");
+    }
+    if (tab.name === "shopping") {
+      return pathname.startsWith("/shopping");
     }
     return pathname.startsWith(`/${tab.name}`);
   };

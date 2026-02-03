@@ -252,9 +252,9 @@ export const cancelSession = mutation({
       throw new Error("You do not have permission to cancel this session");
     }
 
-    // Validate session is active
+    // If session is already completed or cancelled, just return (idempotent)
     if (session.status !== "active") {
-      throw new Error("Session is already completed or cancelled");
+      return args.sessionId;
     }
 
     // Mark as cancelled
