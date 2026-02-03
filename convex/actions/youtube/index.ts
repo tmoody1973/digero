@@ -18,3 +18,7 @@ export {
   downloadThumbnail,
 } from "./extractRecipeFromYouTube";
 export { seedFeaturedChannelsFromYouTube } from "./seedFeaturedChannelsAction";
+export {
+  fetchAndCacheChannelVideos,
+  refreshFollowedChannelVideos,
+} from "./cacheChannelVideos";

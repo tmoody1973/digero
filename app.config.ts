@@ -13,7 +13,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "digero",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./digero_logo_white.png",
+  icon: "./digero-app-icon.png",
   userInterfaceStyle: "automatic",
   splash: {
     image: "./digero_logo_white.png",
@@ -45,8 +45,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: "./digero_logo_white.png",
-      backgroundColor: "#0c0a09",
+      foregroundImage: "./digero-app-icon.png",
+      backgroundColor: "#f5f5f4", // stone-100 to match the icon background
     },
     package: "com.digero.app",
     // Deep linking configuration
@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
   },
   web: {
-    favicon: "./digero_logo_white.png",
+    favicon: "./digero-app-icon.png",
   },
   scheme: "digero",
   plugins: [

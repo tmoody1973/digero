@@ -140,6 +140,63 @@ export const unfollowChannel = mutation({
 });
 
 /**
+ * Cache videos for a channel
+ *
+ * Stores video metadata in the cache table for fast feed retrieval.
+ * Called by the fetchAndCacheChannelVideos action.
+ */
+export const cacheChannelVideos = mutation({
+  args: {
+    videos: v.array(
+      v.object({
+        videoId: v.string(),
+        title: v.string(),
+        description: v.string(),
+        thumbnailUrl: v.string(),
+        duration: v.string(),
+        durationSeconds: v.number(),
+        viewCount: v.number(),
+        publishedAt: v.string(),
+        channelId: v.string(),
+        channelTitle: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const expiresAt = now + 24 * 60 * 60 * 1000; // 24 hours
+
+    let cached = 0;
+    for (const video of args.videos) {
+      // Check if video already cached
+      const existing = await ctx.db
+        .query("youtubeVideoCache")
+        .withIndex("by_video_id", (q) => q.eq("videoId", video.videoId))
+        .first();
+
+      if (existing) {
+        // Update existing cache entry
+        await ctx.db.patch(existing._id, {
+          ...video,
+          cachedAt: now,
+          expiresAt,
+        });
+      } else {
+        // Create new cache entry
+        await ctx.db.insert("youtubeVideoCache", {
+          ...video,
+          cachedAt: now,
+          expiresAt,
+        });
+        cached++;
+      }
+    }
+
+    return { cached, total: args.videos.length };
+  },
+});
+
+/**
  * Update channel data from YouTube API
  *
  * Updates cached channel information. Called periodically to refresh data.

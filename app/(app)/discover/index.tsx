@@ -120,6 +120,13 @@ export default function DiscoverScreen() {
   const searchChannelsAction = useAction(
     api.actions.youtube.fetchChannelData.searchChannels
   );
+  const refreshVideosAction = useAction(
+    api.actions.youtube.cacheChannelVideos.refreshFollowedChannelVideos
+  );
+
+  // State for video refresh
+  const [isRefreshingVideos, setIsRefreshingVideos] = useState(false);
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
 
   // Feed videos data
   const feedVideos = useMemo((): FeedVideoData[] => {
@@ -276,6 +283,48 @@ export default function DiscoverScreen() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, searchChannelsAction]);
 
+  // Auto-refresh videos when feed is empty but user has followed channels
+  useEffect(() => {
+    // Only attempt refresh if:
+    // 1. User has followed channels
+    // 2. Feed is loaded but empty
+    // 3. Haven't already attempted refresh
+    // 4. Not currently refreshing
+    if (
+      followedCount &&
+      followedCount > 0 &&
+      videoFeed !== undefined &&
+      videoFeed.videos.length === 0 &&
+      !hasAttemptedRefresh &&
+      !isRefreshingVideos
+    ) {
+      setIsRefreshingVideos(true);
+      setHasAttemptedRefresh(true);
+      refreshVideosAction({})
+        .then((result) => {
+          console.log("Video refresh result:", result);
+        })
+        .catch((error) => {
+          console.error("Video refresh error:", error);
+        })
+        .finally(() => {
+          setIsRefreshingVideos(false);
+        });
+    }
+  }, [followedCount, videoFeed, hasAttemptedRefresh, isRefreshingVideos, refreshVideosAction]);
+
+  // Handler to manually refresh videos
+  const handleRefreshVideos = useCallback(async () => {
+    setIsRefreshingVideos(true);
+    try {
+      await refreshVideosAction({});
+    } catch (error) {
+      console.error("Video refresh error:", error);
+    } finally {
+      setIsRefreshingVideos(false);
+    }
+  }, [refreshVideosAction]);
+
   // Handlers
   const handleCategorySelect = useCallback((category: Category) => {
     setSelectedCategory((prev) =>
@@ -394,25 +443,61 @@ export default function DiscoverScreen() {
   );
 
   // Empty feed state
-  const renderEmptyFeedState = () => (
-    <View className="flex-1 items-center justify-center py-20">
-      <View className="w-20 h-20 bg-stone-800 rounded-full items-center justify-center mb-4">
-        <Video size={40} color="#78716c" />
+  const renderEmptyFeedState = () => {
+    // If refreshing videos, show loading
+    if (isRefreshingVideos) {
+      return (
+        <View className="flex-1 items-center justify-center py-20">
+          <ActivityIndicator size="large" color="#f97316" />
+          <Text className="text-stone-400 mt-4">Loading videos from your channels...</Text>
+        </View>
+      );
+    }
+
+    // If user has followed channels but no videos, offer to refresh
+    if (followedCount && followedCount > 0) {
+      return (
+        <View className="flex-1 items-center justify-center py-20">
+          <View className="w-20 h-20 bg-stone-800 rounded-full items-center justify-center mb-4">
+            <Video size={40} color="#78716c" />
+          </View>
+          <Text className="text-lg font-semibold text-white mb-2">
+            Loading videos...
+          </Text>
+          <Text className="text-stone-400 text-center px-8 mb-6">
+            Fetching latest videos from your {followedCount} followed channel{followedCount > 1 ? "s" : ""}
+          </Text>
+          <Pressable
+            onPress={handleRefreshVideos}
+            className="px-6 py-3 bg-orange-500 rounded-xl active:bg-orange-600"
+          >
+            <Text className="text-white font-semibold">Refresh Videos</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    // Default: no followed channels
+    return (
+      <View className="flex-1 items-center justify-center py-20">
+        <View className="w-20 h-20 bg-stone-800 rounded-full items-center justify-center mb-4">
+          <Video size={40} color="#78716c" />
+        </View>
+        <Text className="text-lg font-semibold text-white mb-2">
+          No videos yet
+        </Text>
+        <Text className="text-stone-400 text-center px-8 mb-6">
+          Follow some channels to see their latest videos here
+        </Text>
+        <Pressable
+          onPress={() => setViewMode("channels")}
+          className="px-6 py-3 bg-orange-500 rounded-xl active:bg-orange-600"
+        >
+          <Text className="text-white font-semibold">Browse Channels</Text>
+        </Pressable>
       </View>
-      <Text className="text-lg font-semibold text-white mb-2">
-        No videos yet
-      </Text>
-      <Text className="text-stone-400 text-center px-8 mb-6">
-        Follow some channels to see their latest videos here
-      </Text>
-      <Pressable
-        onPress={() => setViewMode("channels")}
-        className="px-6 py-3 bg-orange-500 rounded-xl active:bg-orange-600"
-      >
-        <Text className="text-white font-semibold">Browse Channels</Text>
-      </Pressable>
-    </View>
-  );
+    );
+  };
 
   // Footer for pagination
   const renderFeedFooter = useCallback(() => {
