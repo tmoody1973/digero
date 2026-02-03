@@ -11,6 +11,8 @@ import { View, ActivityIndicator } from "react-native";
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
 
+  console.log("[Index] isLoaded:", isLoaded, "isSignedIn:", isSignedIn);
+
   // Show loading while checking auth
   if (!isLoaded) {
     return (

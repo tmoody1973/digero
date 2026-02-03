@@ -18,6 +18,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { DeleteAccountConfirmation } from "@/components/auth/DeleteAccountConfirmation";
 import { SubscriptionSection } from "@/components/subscription/SubscriptionSection";
+import { TabBar } from "@/components/navigation";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -45,14 +46,9 @@ export default function SettingsScreen() {
     <View className="flex-1 bg-stone-50 dark:bg-stone-950">
       {/* Header */}
       <View className="px-6 pt-12 pb-4 bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800">
-        <View className="flex-row items-center">
-          <Pressable onPress={() => router.back()} className="mr-4 py-2">
-            <Text className="text-orange-500 font-medium">Back</Text>
-          </Pressable>
-          <Text className="text-xl font-bold text-stone-900 dark:text-stone-100">
-            Settings
-          </Text>
-        </View>
+        <Text className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+          Settings
+        </Text>
       </View>
 
       <ScrollView className="flex-1" contentContainerClassName="py-6">
@@ -148,6 +144,9 @@ export default function SettingsScreen() {
           setShowDeleteConfirmation(false);
         }}
       />
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
     </View>
   );
 }

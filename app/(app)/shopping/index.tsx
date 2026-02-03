@@ -24,6 +24,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ShoppingListCard, MealSelectionModal } from "@/components/shopping";
+import { TabBar } from "@/components/navigation";
 
 export default function ShoppingListsScreen() {
   const router = useRouter();
@@ -388,6 +389,9 @@ export default function ShoppingListsScreen() {
           </View>
         </View>
       )}
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
     </SafeAreaView>
   );
 }

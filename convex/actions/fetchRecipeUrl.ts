@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Fetch Recipe URL Action
  *

@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Fetch YouTube Video Captions Action
  *

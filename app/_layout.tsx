@@ -6,8 +6,9 @@
  * Manages the global authentication state, navigation structure, and deep linking.
  */
 
+import "../global.css";
 import { useEffect, useCallback } from "react";
-import { ClerkProvider, ClerkLoaded, useAuth } from "@clerk/clerk-expo";
+import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 import { Slot, useRouter, useSegments } from "expo-router";
@@ -44,6 +45,9 @@ function InitialLayout() {
   const { isSignedIn, isLoaded } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Debug logging
+  console.log("[Auth Debug] isLoaded:", isLoaded, "isSignedIn:", isSignedIn, "segments:", JSON.stringify(segments));
 
   /**
    * Handle share context (from deep link or share extension)
@@ -125,15 +129,14 @@ function InitialLayout() {
 }
 
 export default function RootLayout() {
+  console.log("[RootLayout] Rendering...");
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          <SubscriptionProvider>
-            <InitialLayout />
-          </SubscriptionProvider>
-        </ConvexProviderWithClerk>
-      </ClerkLoaded>
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <SubscriptionProvider>
+          <InitialLayout />
+        </SubscriptionProvider>
+      </ConvexProviderWithClerk>
     </ClerkProvider>
   );
 }

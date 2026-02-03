@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Process Recipe Image Action
  *

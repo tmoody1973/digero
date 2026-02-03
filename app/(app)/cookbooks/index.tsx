@@ -30,6 +30,7 @@ import {
   DeleteConfirmationDialog,
   type ViewMode,
 } from "@/components/cookbooks";
+import { TabBar } from "@/components/navigation";
 
 export default function CookbooksScreen() {
   const router = useRouter();
@@ -315,6 +316,9 @@ export default function CookbooksScreen() {
         onConfirm={confirmDelete}
         onCancel={() => setDeleteCookbook(null)}
       />
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
     </View>
   );
 }

@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * YouTube Actions Index
  *

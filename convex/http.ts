@@ -10,7 +10,33 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Webhook } from "svix";
-import * as crypto from "crypto";
+
+/**
+ * Verify HMAC-SHA256 signature using Web Crypto API
+ */
+async function verifyHmacSignature(
+  secret: string,
+  body: string,
+  signature: string
+): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBuffer = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(body)
+  );
+  const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return signature === expectedSignature;
+}
 
 const http = httpRouter();
 
@@ -171,13 +197,9 @@ http.route({
       return new Response("Missing signature header", { status: 400 });
     }
 
-    // Verify HMAC signature
-    const expectedSignature = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(body)
-      .digest("hex");
-
-    if (signature !== expectedSignature) {
+    // Verify HMAC signature using Web Crypto API
+    const isValid = await verifyHmacSignature(webhookSecret, body, signature);
+    if (!isValid) {
       console.error("RevenueCat webhook signature verification failed");
       return new Response("Invalid signature", { status: 401 });
     }

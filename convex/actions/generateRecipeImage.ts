@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Generate Recipe Image Action
  *
@@ -6,9 +8,8 @@
  */
 
 import { v } from "convex/values";
-import { action, internalMutation } from "../_generated/server";
-import { api, internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
+import { action } from "../_generated/server";
+import { internal } from "../_generated/api";
 
 /**
  * Generate a placeholder image for a recipe using Gemini AI
@@ -100,7 +101,7 @@ appetizing presentation on a clean plate, top-down or 45-degree angle view.`;
       }
 
       // Update the recipe with the new image URL
-      await ctx.runMutation(internal.actions.generateRecipeImage.updateRecipeImage, {
+      await ctx.runMutation(internal.internalMutations.updateRecipeImage, {
         recipeId: args.recipeId,
         imageUrl,
       });
@@ -113,22 +114,3 @@ appetizing presentation on a clean plate, top-down or 45-degree angle view.`;
   },
 });
 
-/**
- * Internal mutation to update recipe image URL
- *
- * This is used by the generateRecipeImage action to update
- * the recipe after image generation completes.
- */
-export const updateRecipeImage = internalMutation({
-  args: {
-    recipeId: v.id("recipes"),
-    imageUrl: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.recipeId, {
-      imageUrl: args.imageUrl,
-      updatedAt: Date.now(),
-    });
-    return args.recipeId;
-  },
-});

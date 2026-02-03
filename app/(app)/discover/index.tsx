@@ -41,6 +41,7 @@ import {
   type ChannelFilter,
   type ChannelCategory,
 } from "@/components/discover";
+import { TabBar } from "@/components/navigation";
 
 /**
  * Available categories for filtering
@@ -747,6 +748,9 @@ export default function DiscoverScreen() {
         }}
         onSave={handleSavePreview}
       />
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
     </View>
   );
 }

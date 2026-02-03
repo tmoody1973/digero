@@ -144,6 +144,50 @@ export const deleteUserByClerkId = internalMutation({
 // ============================================================================
 
 /**
+ * Ensure user exists (create if missing)
+ *
+ * Called from the app to ensure the user exists in the database.
+ * This handles cases where the Clerk webhook is delayed or fails.
+ */
+export const ensureUserExists = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    const clerkId = identity.subject;
+
+    // Check if user already exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .unique();
+
+    if (existingUser) {
+      return existingUser._id;
+    }
+
+    // Create user from Clerk identity data
+    const now = Date.now();
+    const userId = await ctx.db.insert("users", {
+      clerkId: clerkId,
+      email: identity.email ?? "",
+      name: identity.name ?? identity.nickname ?? "User",
+      avatarUrl: identity.pictureUrl,
+      cookingSkillLevel: undefined,
+      dietaryRestrictions: [],
+      hasCompletedOnboarding: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return userId;
+  },
+});
+
+/**
  * Update user profile
  *
  * Updates the authenticated user's profile fields (cooking skill, dietary restrictions).

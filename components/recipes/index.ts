@@ -19,5 +19,6 @@ export { ImageSelector } from "./ImageSelector";
 export { DietaryTagSelector } from "./DietaryTagSelector";
 export { NutritionInputs } from "./NutritionInputs";
 export { DiscardConfirmation } from "./DiscardConfirmation";
+export { AddRecipeMenu } from "./AddRecipeMenu";
 
 export * from "./types";

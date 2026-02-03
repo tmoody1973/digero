@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Extract Recipe From URL Action
  *

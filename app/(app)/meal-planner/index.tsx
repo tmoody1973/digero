@@ -30,6 +30,7 @@ import {
   EmptyWeekState,
   ContextMenu,
 } from "@/components/meal-planner";
+import { TabBar } from "@/components/navigation";
 import type { MealSlot, PlannedMeal } from "@/types/meal-planner";
 
 // AsyncStorage keys
@@ -438,6 +439,9 @@ export default function MealPlannerScreen() {
             onClose={() => setContextMenuMeal(null)}
           />
         )}
+
+        {/* Bottom Tab Bar */}
+        <TabBar />
       </View>
     </GestureHandlerRootView>
   );

@@ -30,6 +30,7 @@ import {
   type SortOption,
   type ViewMode,
 } from "@/components/recipes/list";
+import { TabBar } from "@/components/navigation";
 
 type SourceFilter = "all" | "youtube" | "website" | "scanned" | "manual";
 
@@ -45,7 +46,7 @@ export default function HomeScreen() {
 
   // Fetch recipes with current filters
   const recipesResult = useQuery(api.recipes.listRecipes, {
-    paginationOpts: { numItems: 50 },
+    paginationOpts: { numItems: 50, cursor: null },
     sourceFilter: sourceFilter === "all" ? undefined : sourceFilter,
     searchQuery: searchQuery || undefined,
     sortBy,
@@ -196,10 +197,13 @@ export default function HomeScreen() {
       {/* Floating Add Button */}
       <Pressable
         onPress={handleAddRecipe}
-        className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-orange-500 shadow-lg active:bg-orange-600"
+        className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-orange-500 shadow-lg active:bg-orange-600"
       >
         <Plus className="h-6 w-6 text-white" />
       </Pressable>
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
     </View>
   );
 }

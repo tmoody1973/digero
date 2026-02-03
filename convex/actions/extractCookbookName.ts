@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Extract Cookbook Name Action
  *

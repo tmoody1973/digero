@@ -25,6 +25,7 @@ import {
   Plus,
   Play,
 } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { Id } from "@/convex/_generated/dataModel";
 
 import {
@@ -126,6 +127,7 @@ export default function ChannelDetailScreen() {
   const [videos, setVideos] = useState<ChannelVideo[]>([]);
   const [isLoadingVideos, setIsLoadingVideos] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   // Video player state
   const [playerVisible, setPlayerVisible] = useState(false);
@@ -164,6 +166,8 @@ export default function ChannelDetailScreen() {
     if (!channel?.youtubeChannelId) return;
 
     setIsLoadingVideos(true);
+    setVideoError(null);
+
     try {
       const result = await getChannelVideos({
         channelId: channel.youtubeChannelId,
@@ -172,9 +176,12 @@ export default function ChannelDetailScreen() {
 
       if (result.success && result.data) {
         setVideos(result.data);
+      } else {
+        setVideoError(result.error?.message || "Failed to load videos");
       }
     } catch (error) {
       console.error("Error fetching videos:", error);
+      setVideoError("YouTube API error. Check if API key is configured.");
     } finally {
       setIsLoadingVideos(false);
     }
@@ -273,25 +280,45 @@ export default function ChannelDetailScreen() {
   // Not found state
   if (channel === null) {
     return (
-      <View className="flex-1 bg-stone-950 items-center justify-center px-4">
-        <Text className="text-white text-lg font-semibold mb-2">
-          Channel Not Found
-        </Text>
-        <Text className="text-stone-400 text-center mb-6">
-          This channel may have been removed or is no longer available.
-        </Text>
-        <Pressable
-          onPress={handleBack}
-          className="px-6 py-3 bg-orange-500 rounded-xl active:bg-orange-600"
-        >
-          <Text className="text-white font-semibold">Go Back</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView className="flex-1 bg-stone-950" edges={["top"]}>
+        <View className="flex-row items-center px-4 py-3 border-b border-stone-800">
+          <Pressable onPress={handleBack} className="p-2 -m-2">
+            <ArrowLeft size={24} color="#fff" />
+          </Pressable>
+        </View>
+        <View className="flex-1 items-center justify-center px-4">
+          <Text className="text-white text-lg font-semibold mb-2">
+            Channel Not Found
+          </Text>
+          <Text className="text-stone-400 text-center mb-6">
+            This channel may have been removed or is no longer available.
+          </Text>
+          <Pressable
+            onPress={handleBack}
+            className="px-6 py-3 bg-orange-500 rounded-xl active:bg-orange-600"
+          >
+            <Text className="text-white font-semibold">Go Back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-stone-950">
+    <SafeAreaView className="flex-1 bg-stone-950" edges={["top"]}>
+      {/* Header Bar */}
+      <View className="flex-row items-center px-4 py-3 border-b border-stone-800">
+        <Pressable
+          onPress={handleBack}
+          className="w-10 h-10 items-center justify-center rounded-full active:bg-stone-800 -ml-2"
+        >
+          <ArrowLeft size={24} color="#fff" />
+        </Pressable>
+        <Text className="flex-1 text-lg font-semibold text-white ml-2" numberOfLines={1}>
+          {channel.name}
+        </Text>
+      </View>
+
       <ScrollView
         className="flex-1"
         refreshControl={
@@ -302,108 +329,94 @@ export default function ChannelDetailScreen() {
           />
         }
       >
-        {/* Header with Gradient */}
-        <View className="relative">
-          {/* Gradient Background */}
-          <View className="h-32 bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600" />
+        {/* Channel Info Card */}
+        <View className="m-4 bg-stone-900 rounded-2xl p-6 border border-stone-800">
+          <View className="flex-row items-start gap-4">
+            {/* Avatar */}
+            {channel.avatarUrl && !channel.avatarUrl.includes("ui-avatars") ? (
+              <Image
+                source={{ uri: channel.avatarUrl }}
+                className="w-20 h-20 rounded-2xl"
+              />
+            ) : (
+              <View className="w-20 h-20 rounded-2xl bg-orange-500 items-center justify-center">
+                <Text className="text-white font-bold text-3xl">
+                  {getInitial(channel.name)}
+                </Text>
+              </View>
+            )}
 
-          {/* Back Button */}
-          <Pressable
-            onPress={handleBack}
-            className="absolute top-12 left-4 w-10 h-10 bg-black/30 rounded-full items-center justify-center active:bg-black/40"
-          >
-            <ArrowLeft size={24} color="#fff" />
-          </Pressable>
+            {/* Info */}
+            <View className="flex-1">
+              {/* Name and Featured Badge */}
+              <View className="flex-row items-center gap-2 flex-wrap">
+                <Text className="text-xl font-bold text-white">
+                  {channel.name}
+                </Text>
+                {channel.isFeatured && (
+                  <View className="flex-row items-center gap-1 bg-orange-500/20 px-2 py-0.5 rounded-full">
+                    <Star size={12} color="#f97316" fill="#f97316" />
+                    <Text className="text-orange-500 text-xs font-bold">
+                      Featured
+                    </Text>
+                  </View>
+                )}
+              </View>
 
-          {/* Channel Info Card */}
-          <View className="mx-4 -mt-16 bg-stone-900 rounded-2xl p-6 border border-stone-800">
-            <View className="flex-row items-start gap-4">
-              {/* Avatar */}
-              {channel.avatarUrl ? (
-                <Image
-                  source={{ uri: channel.avatarUrl }}
-                  className="w-20 h-20 rounded-2xl"
-                />
-              ) : (
-                <View className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 items-center justify-center">
-                  <Text className="text-white font-bold text-3xl">
-                    {getInitial(channel.name)}
-                  </Text>
-                </View>
-              )}
+              {/* Stats */}
+              <View className="flex-row items-center gap-4 mt-2">
+                <Text className="text-stone-400 text-sm">
+                  {formatSubscriberCount(channel.subscriberCount)}
+                </Text>
+                <Text className="text-stone-600">|</Text>
+                <Text className="text-stone-400 text-sm">
+                  {channel.videoCount} videos
+                </Text>
+              </View>
 
-              {/* Info */}
-              <View className="flex-1">
-                {/* Name and Featured Badge */}
-                <View className="flex-row items-center gap-2 flex-wrap">
-                  <Text className="text-xl font-bold text-white">
-                    {channel.name}
-                  </Text>
-                  {channel.isFeatured && (
-                    <View className="flex-row items-center gap-1 bg-orange-500/20 px-2 py-0.5 rounded-full">
-                      <Star size={12} color="#f97316" fill="#f97316" />
-                      <Text className="text-orange-500 text-xs font-bold">
-                        Featured
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Stats */}
-                <View className="flex-row items-center gap-4 mt-2">
-                  <Text className="text-stone-400 text-sm">
-                    {formatSubscriberCount(channel.subscriberCount)}
-                  </Text>
-                  <Text className="text-stone-600">|</Text>
-                  <Text className="text-stone-400 text-sm">
-                    {channel.videoCount} videos
-                  </Text>
-                </View>
-
-                {/* Category */}
-                <View
-                  className={`self-start mt-2 px-2 py-0.5 rounded-full ${getCategoryColor(channel.category)}`}
-                >
-                  <Text className="text-white text-xs font-medium">
-                    {channel.category}
-                  </Text>
-                </View>
+              {/* Category */}
+              <View
+                className={`self-start mt-2 px-2 py-0.5 rounded-full ${getCategoryColor(channel.category)}`}
+              >
+                <Text className="text-white text-xs font-medium">
+                  {channel.category}
+                </Text>
               </View>
             </View>
-
-            {/* Description */}
-            <Text className="text-stone-400 mt-4" numberOfLines={3}>
-              {channel.description}
-            </Text>
-
-            {/* Follow Button */}
-            <Pressable
-              onPress={channel.isFollowing ? handleUnfollow : handleFollow}
-              className={`mt-4 flex-row items-center justify-center gap-2 py-3 rounded-xl ${
-                channel.isFollowing
-                  ? "bg-stone-800 active:bg-stone-700"
-                  : "bg-orange-500 active:bg-orange-600"
-              }`}
-            >
-              {channel.isFollowing ? (
-                <>
-                  <Check size={20} color="#a8a29e" />
-                  <Text className="text-stone-300 font-semibold">
-                    Following
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Plus size={20} color="#fff" />
-                  <Text className="text-white font-semibold">Follow</Text>
-                </>
-              )}
-            </Pressable>
           </View>
+
+          {/* Description */}
+          <Text className="text-stone-400 mt-4" numberOfLines={3}>
+            {channel.description}
+          </Text>
+
+          {/* Follow Button */}
+          <Pressable
+            onPress={channel.isFollowing ? handleUnfollow : handleFollow}
+            className={`mt-4 flex-row items-center justify-center gap-2 py-3 rounded-xl ${
+              channel.isFollowing
+                ? "bg-stone-800 active:bg-stone-700"
+                : "bg-orange-500 active:bg-orange-600"
+            }`}
+          >
+            {channel.isFollowing ? (
+              <>
+                <Check size={20} color="#a8a29e" />
+                <Text className="text-stone-300 font-semibold">
+                  Following
+                </Text>
+              </>
+            ) : (
+              <>
+                <Plus size={20} color="#fff" />
+                <Text className="text-white font-semibold">Follow</Text>
+              </>
+            )}
+          </Pressable>
         </View>
 
         {/* Videos Section */}
-        <View className="px-4 py-6">
+        <View className="px-4 pb-6">
           <Text className="text-lg font-bold text-white mb-4">
             Latest Videos
           </Text>
@@ -411,10 +424,27 @@ export default function ChannelDetailScreen() {
           {isLoadingVideos ? (
             <View className="items-center py-12">
               <ActivityIndicator size="large" color="#f97316" />
+              <Text className="text-stone-400 mt-2">Loading videos...</Text>
+            </View>
+          ) : videoError ? (
+            <View className="items-center py-12 px-4">
+              <Text className="text-stone-400 text-center">{videoError}</Text>
+              <Text className="text-stone-500 text-sm text-center mt-2">
+                Channel ID: {channel.youtubeChannelId}
+              </Text>
+              <Pressable
+                onPress={fetchVideos}
+                className="mt-4 px-4 py-2 bg-stone-800 rounded-lg"
+              >
+                <Text className="text-stone-300">Retry</Text>
+              </Pressable>
             </View>
           ) : videos.length === 0 ? (
             <View className="items-center py-12">
               <Text className="text-stone-400">No videos yet</Text>
+              <Text className="text-stone-500 text-sm mt-1">
+                Videos will appear once YouTube API is configured
+              </Text>
             </View>
           ) : (
             <View className="flex-row flex-wrap -mx-2">
@@ -505,6 +535,6 @@ export default function ChannelDetailScreen() {
         }}
         onSave={handleSavePreview}
       />
-    </View>
+    </SafeAreaView>
   );
 }

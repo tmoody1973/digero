@@ -113,141 +113,10 @@ function mapToCategory(cuisineTypes: string[]): ChannelCategory {
 /**
  * Curated list of featured cooking channels
  */
+// Real YouTube channel IDs (24 character format starting with UC)
 const FEATURED_CHANNELS: FeaturedChannel[] = [
   {
-    youtubeChannelId: "UCeitan",
-    name: "Eitan Bernath",
-    handle: "@eitan",
-    subscribers: "362K",
-    videoCount: 907,
-    description:
-      "Chef, Author, Entertainer, Entrepreneur, Activist. Eitan is a young culinary star known for his energetic cooking style and approachable recipes.",
-    cuisineTypes: ["American", "International", "Comfort Food"],
-    category: "General",
-  },
-  {
-    youtubeChannelId: "UCThatLittlePuff",
-    name: "That Little Puff",
-    handle: "@ThatLittlePuff",
-    subscribers: "36.7M",
-    videoCount: 500,
-    description:
-      "A viral cooking channel featuring a cat chef creating fun and creative recipes. Known for its unique presentation style.",
-    cuisineTypes: ["Asian", "Fusion", "Creative"],
-    category: "Asian",
-  },
-  {
-    youtubeChannelId: "UCDONA",
-    name: "DONA",
-    handle: "@DONA",
-    subscribers: "33.6M",
-    videoCount: 400,
-    description:
-      "Korean cooking channel known for visually stunning food videos and ASMR-style content featuring Korean and Asian cuisine.",
-    cuisineTypes: ["Korean", "Asian", "Desserts"],
-    category: "Asian",
-  },
-  {
-    youtubeChannelId: "UCBayashiTV",
-    name: "Bayashi TV",
-    handle: "@BayashiTV",
-    subscribers: "32.9M",
-    videoCount: 600,
-    description:
-      "Japanese cooking channel featuring quick, satisfying cooking videos with impressive knife skills and creative presentations.",
-    cuisineTypes: ["Japanese", "Asian", "Street Food"],
-    category: "Asian",
-  },
-  {
-    youtubeChannelId: "UCVillageCookingChannel",
-    name: "Village Cooking Channel",
-    handle: "@VillageCookingChannel",
-    subscribers: "28.8M",
-    videoCount: 300,
-    description:
-      "Indian cooking channel showcasing traditional village-style cooking with large-scale recipes prepared outdoors using traditional methods.",
-    cuisineTypes: ["Indian", "Traditional", "Village Style"],
-    category: "General",
-  },
-  {
-    youtubeChannelId: "UCAjaKitchen",
-    name: "Aja Kitchen",
-    handle: "@AjaKitchen",
-    subscribers: "28.7M",
-    videoCount: 350,
-    description:
-      "Popular cooking channel known for authentic Asian recipes with a home-style touch and easy-to-follow tutorials.",
-    cuisineTypes: ["Asian", "Indonesian", "Home Cooking"],
-    category: "Asian",
-  },
-  {
-    youtubeChannelId: "UCLiziqi",
-    name: "Liziqi",
-    handle: "@Liziqi",
-    subscribers: "27.3M",
-    videoCount: 150,
-    description:
-      "Chinese content creator known for cinematic videos showcasing traditional Chinese cooking, farming, and craftsmanship.",
-    cuisineTypes: ["Chinese", "Traditional", "Farm-to-Table"],
-    category: "Asian",
-  },
-  {
-    youtubeChannelId: "UCNickDiGiovanni",
-    name: "Nick DiGiovanni",
-    handle: "@NickDiGiovanni",
-    subscribers: "27.3M",
-    videoCount: 400,
-    description:
-      "Former MasterChef finalist known for making complex recipes approachable, food challenges, and collaborations.",
-    cuisineTypes: ["American", "International", "Gourmet"],
-    category: "General",
-  },
-  {
-    youtubeChannelId: "UCalbertcancook",
-    name: "albert_cancook",
-    handle: "@albertcancook",
-    subscribers: "26.7M",
-    videoCount: 450,
-    description:
-      "Fast-paced, visually satisfying cooking videos that go viral for their entertainment and educational value.",
-    cuisineTypes: ["International", "Quick Recipes", "Comfort Food"],
-    category: "Quick Meals",
-  },
-  {
-    youtubeChannelId: "UCGordonRamsay",
-    name: "Gordon Ramsay",
-    handle: "@GordonRamsay",
-    subscribers: "21.5M",
-    videoCount: 800,
-    description:
-      "World-renowned celebrity chef sharing professional cooking techniques, recipes, and entertaining content.",
-    cuisineTypes: ["British", "French", "International", "Fine Dining"],
-    category: "General",
-  },
-  {
-    youtubeChannelId: "UCTasty",
-    name: "Tasty",
-    handle: "@Tasty",
-    subscribers: "21.4M",
-    videoCount: 2000,
-    description:
-      "BuzzFeed's popular food brand known for overhead cooking videos, viral recipes, and easy-to-follow tutorials.",
-    cuisineTypes: ["American", "International", "Comfort Food", "Desserts"],
-    category: "Quick Meals",
-  },
-  {
-    youtubeChannelId: "UCAmauryGuichon",
-    name: "Amaury Guichon",
-    handle: "@AmauryGuichon",
-    subscribers: "21.4M",
-    videoCount: 200,
-    description:
-      "World-famous pastry chef known for incredible chocolate sculptures and artistic dessert creations.",
-    cuisineTypes: ["Pastry", "Chocolate", "Desserts", "French"],
-    category: "Baking",
-  },
-  {
-    youtubeChannelId: "UCJoshuaWeissman",
+    youtubeChannelId: "UCsaGKqPZnGp_7N80hcHySGQ", // Joshua Weissman
     name: "Joshua Weissman",
     handle: "@JoshuaWeissman",
     subscribers: "10.2M",
@@ -258,7 +127,7 @@ const FEATURED_CHANNELS: FeaturedChannel[] = [
     category: "General",
   },
   {
-    youtubeChannelId: "UCBabish",
+    youtubeChannelId: "UCJHA_jMfCvEnv-3kRjTCQXw", // Binging with Babish
     name: "Babish Culinary Universe",
     handle: "@babishculinaryuniverse",
     subscribers: "10M",
@@ -269,7 +138,40 @@ const FEATURED_CHANNELS: FeaturedChannel[] = [
     category: "General",
   },
   {
-    youtubeChannelId: "UCMaangchi",
+    youtubeChannelId: "UCRIZtPl9nb9RiXc9btSTQNw", // Gordon Ramsay
+    name: "Gordon Ramsay",
+    handle: "@GordonRamsay",
+    subscribers: "21.5M",
+    videoCount: 800,
+    description:
+      "World-renowned celebrity chef sharing professional cooking techniques, recipes, and entertaining content.",
+    cuisineTypes: ["British", "French", "International", "Fine Dining"],
+    category: "General",
+  },
+  {
+    youtubeChannelId: "UCJFp8uSYCjXOMnkUyb3CQ3Q", // Tasty
+    name: "Tasty",
+    handle: "@Tasty",
+    subscribers: "21.4M",
+    videoCount: 2000,
+    description:
+      "BuzzFeed's popular food brand known for overhead cooking videos, viral recipes, and easy-to-follow tutorials.",
+    cuisineTypes: ["American", "International", "Comfort Food", "Desserts"],
+    category: "Quick Meals",
+  },
+  {
+    youtubeChannelId: "UCFjd060Z3nTHv0UyO8M43mQ", // Nick DiGiovanni
+    name: "Nick DiGiovanni",
+    handle: "@NickDiGiovanni",
+    subscribers: "27.3M",
+    videoCount: 400,
+    description:
+      "Former MasterChef finalist known for making complex recipes approachable, food challenges, and collaborations.",
+    cuisineTypes: ["American", "International", "Gourmet"],
+    category: "General",
+  },
+  {
+    youtubeChannelId: "UC3SKbLslzPwpZ7w-gk4RYeg", // Maangchi
     name: "Maangchi",
     handle: "@Maangchi",
     subscribers: "6.5M",
@@ -280,29 +182,7 @@ const FEATURED_CHANNELS: FeaturedChannel[] = [
     category: "Asian",
   },
   {
-    youtubeChannelId: "UCFoodNetwork",
-    name: "Food Network",
-    handle: "@FoodNetwork",
-    subscribers: "12.8M",
-    videoCount: 1500,
-    description:
-      "Official YouTube channel of Food Network featuring clips from popular shows and recipes from celebrity chefs.",
-    cuisineTypes: ["American", "International", "Various"],
-    category: "General",
-  },
-  {
-    youtubeChannelId: "UCMarionsKitchen",
-    name: "Marion's Kitchen",
-    handle: "@MarionsKitchen",
-    subscribers: "4.8M",
-    videoCount: 600,
-    description:
-      "Australian-Thai food blogger sharing authentic Asian recipes with easy-to-follow instructions.",
-    cuisineTypes: ["Thai", "Asian", "Southeast Asian"],
-    category: "Asian",
-  },
-  {
-    youtubeChannelId: "UCAdamRagusea",
+    youtubeChannelId: "UCqqJQ_cXSat0KIAVfIfKkVA", // Adam Ragusea
     name: "Adam Ragusea",
     handle: "@AdamRagusea",
     subscribers: "2.3M",
@@ -313,40 +193,18 @@ const FEATURED_CHANNELS: FeaturedChannel[] = [
     category: "General",
   },
   {
-    youtubeChannelId: "UCChineseCookingDemystified",
-    name: "Chinese Cooking Demystified",
-    handle: "@ChineseCookingDemystified",
-    subscribers: "1.5M",
-    videoCount: 200,
+    youtubeChannelId: "UCsz_93v-fkWLD3rJ2_ba0qA", // Marion's Kitchen
+    name: "Marion's Kitchen",
+    handle: "@MarionsKitchen",
+    subscribers: "4.8M",
+    videoCount: 600,
     description:
-      "In-depth exploration of authentic Chinese cooking techniques and regional cuisines.",
-    cuisineTypes: ["Chinese", "Regional Chinese", "Traditional"],
+      "Australian-Thai food blogger sharing authentic Asian recipes with easy-to-follow instructions.",
+    cuisineTypes: ["Thai", "Asian", "Southeast Asian"],
     category: "Asian",
   },
   {
-    youtubeChannelId: "UCNishaMadhulika",
-    name: "Nisha Madhulika",
-    handle: "@NishaMadhulika",
-    subscribers: "14.9M",
-    videoCount: 1800,
-    description:
-      "Popular Indian cooking channel featuring vegetarian recipes and traditional Indian dishes.",
-    cuisineTypes: ["Indian", "Vegetarian", "Traditional Indian"],
-    category: "Healthy",
-  },
-  {
-    youtubeChannelId: "UCBrianLagerstrom",
-    name: "Brian Lagerstrom",
-    handle: "@BrianLagerstrom",
-    subscribers: "1.8M",
-    videoCount: 300,
-    description:
-      "Former professional chef sharing restaurant-quality recipes adapted for home cooking.",
-    cuisineTypes: ["American", "International", "Restaurant-Style"],
-    category: "General",
-  },
-  {
-    youtubeChannelId: "UCBonAppetit",
+    youtubeChannelId: "UCddiUEpeqJcYeBxX1IVBKvQ", // Bon Appetit
     name: "Bon Appetit",
     handle: "@BonAppetit",
     subscribers: "6.2M",
@@ -357,7 +215,7 @@ const FEATURED_CHANNELS: FeaturedChannel[] = [
     category: "General",
   },
   {
-    youtubeChannelId: "UCAmericasTestKitchen",
+    youtubeChannelId: "UCxr2d4As312LulcajAkKJYw", // America's Test Kitchen
     name: "America's Test Kitchen",
     handle: "@AmericasTestKitchen",
     subscribers: "2.1M",
@@ -368,26 +226,26 @@ const FEATURED_CHANNELS: FeaturedChannel[] = [
     category: "General",
   },
   {
-    youtubeChannelId: "UCKabitasKitchen",
-    name: "Kabita's Kitchen",
-    handle: "@KabitasKitchen",
-    subscribers: "14.4M",
-    videoCount: 1600,
+    youtubeChannelId: "UCtuUmLzJMk7ixNfvnJ2vYow", // Chinese Cooking Demystified
+    name: "Chinese Cooking Demystified",
+    handle: "@ChineseCookingDemystified",
+    subscribers: "1.5M",
+    videoCount: 200,
     description:
-      "Popular Indian cooking channel featuring easy-to-make Indian recipes for everyday cooking.",
-    cuisineTypes: ["Indian", "North Indian", "Home Cooking"],
-    category: "General",
+      "In-depth exploration of authentic Chinese cooking techniques and regional cuisines.",
+    cuisineTypes: ["Chinese", "Regional Chinese", "Traditional"],
+    category: "Asian",
   },
   {
-    youtubeChannelId: "UCPailinsKitchen",
-    name: "Pailin's Kitchen",
-    handle: "@PailinsKitchen",
-    subscribers: "1.2M",
-    videoCount: 250,
+    youtubeChannelId: "UCjKt04dmt0-HX1uX-p69MBg", // Brian Lagerstrom
+    name: "Brian Lagerstrom",
+    handle: "@BrianLagerstrom",
+    subscribers: "1.8M",
+    videoCount: 300,
     description:
-      "Authentic Thai cooking channel run by a Thai-Canadian chef sharing traditional recipes.",
-    cuisineTypes: ["Thai", "Southeast Asian", "Traditional"],
-    category: "Asian",
+      "Former professional chef sharing restaurant-quality recipes adapted for home cooking.",
+    cuisineTypes: ["American", "International", "Restaurant-Style"],
+    category: "General",
   },
 ];
 

@@ -1,3 +1,5 @@
+"use node";
+
 /**
  * Fetch YouTube Channel Data Action
  *
