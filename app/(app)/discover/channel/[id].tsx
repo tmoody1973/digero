@@ -142,10 +142,22 @@ export default function ChannelDetailScreen() {
   } = useYouTubeExtraction();
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
 
-  // Convex queries and mutations
-  const channel = useQuery(api.channels.getChannelById, {
-    channelId: id as Id<"youtubeChannels">,
-  });
+  // Determine if ID is a Convex ID or YouTube channel ID
+  // Convex IDs are longer and contain specific patterns
+  const isConvexId = id && id.length > 20 && !id.startsWith("UC");
+
+  // Convex queries and mutations - use appropriate query based on ID type
+  const channelByConvexId = useQuery(
+    api.channels.getChannelById,
+    isConvexId ? { channelId: id as Id<"youtubeChannels"> } : "skip"
+  );
+  const channelByYoutubeId = useQuery(
+    api.channels.getChannelByYoutubeId,
+    !isConvexId ? { youtubeChannelId: id } : "skip"
+  );
+
+  // Use whichever query returned data
+  const channel = isConvexId ? channelByConvexId : channelByYoutubeId;
   const followChannel = useMutation(api.channels.followChannel);
   const unfollowChannel = useMutation(api.channels.unfollowChannel);
   const saveFromYouTube = useMutation(api.recipes.saveFromYouTube);
