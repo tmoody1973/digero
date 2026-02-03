@@ -1,0 +1,342 @@
+{
+  "_meta": {
+    "models": {
+      "channels": "YouTube cooking channels that users can follow to discover new recipes. Each channel shows their avatar, subscriber count, and recent videos.",
+      "videos": "Individual recipe videos from channels, showing thumbnail, title, duration, and view count.",
+      "categories": "Browsing categories to help users discover channels by cuisine type, meal type, or skill level."
+    },
+    "relationships": [
+      "Each Channel has many Videos (their recent uploads)",
+      "Channels belong to Categories for browsing",
+      "Videos can be saved as Recipes to the user's library"
+    ]
+  },
+  "categories": [
+    { "id": "cat-1", "name": "Italian", "icon": "pizza", "channelCount": 24 },
+    { "id": "cat-2", "name": "Asian", "icon": "soup", "channelCount": 31 },
+    { "id": "cat-3", "name": "Quick Meals", "icon": "clock", "channelCount": 18 },
+    { "id": "cat-4", "name": "Baking", "icon": "cake", "channelCount": 22 },
+    { "id": "cat-5", "name": "Healthy", "icon": "salad", "channelCount": 15 },
+    { "id": "cat-6", "name": "BBQ & Grilling", "icon": "flame", "channelCount": 12 },
+    { "id": "cat-7", "name": "Beginner Friendly", "icon": "star", "channelCount": 20 },
+    { "id": "cat-8", "name": "Desserts", "icon": "cookie", "channelCount": 19 }
+  ],
+  "channels": [
+    {
+      "id": "ch-001",
+      "name": "Eitan Bernath",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKY8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 2100000,
+      "isFollowing": true,
+      "isFeatured": true,
+      "category": "Quick Meals",
+      "description": "Hi! I'm Eitan, a 21-year-old chef, author, and entertainer on a mission to make cooking fun and accessible.",
+      "recentVideos": [
+        {
+          "id": "vid-001",
+          "title": "The Perfect 15-Minute Pasta You Need to Try",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=480",
+          "duration": "12:34",
+          "publishedAt": "2026-02-01T14:00:00Z",
+          "viewCount": 245000
+        },
+        {
+          "id": "vid-002",
+          "title": "Crispy Smashed Potatoes That Will Change Your Life",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=480",
+          "duration": "8:21",
+          "publishedAt": "2026-01-28T14:00:00Z",
+          "viewCount": 189000
+        },
+        {
+          "id": "vid-003",
+          "title": "One-Pan Chicken Dinner in 20 Minutes",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=480",
+          "duration": "15:45",
+          "publishedAt": "2026-01-25T14:00:00Z",
+          "viewCount": 312000
+        }
+      ]
+    },
+    {
+      "id": "ch-002",
+      "name": "Joshua Weissman",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKa8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 9800000,
+      "isFollowing": true,
+      "isFeatured": true,
+      "category": "Baking",
+      "description": "Professional chef making restaurant-quality food at home. But Better series, fermentation, and epic cooking challenges.",
+      "recentVideos": [
+        {
+          "id": "vid-004",
+          "title": "Making The Perfect Homemade Burger Buns",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=480",
+          "duration": "18:22",
+          "publishedAt": "2026-02-02T16:00:00Z",
+          "viewCount": 520000
+        },
+        {
+          "id": "vid-005",
+          "title": "I Made a $500 Steak at Home",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=480",
+          "duration": "22:15",
+          "publishedAt": "2026-01-30T16:00:00Z",
+          "viewCount": 890000
+        }
+      ]
+    },
+    {
+      "id": "ch-003",
+      "name": "Pasta Grannies",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKb8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 1200000,
+      "isFollowing": true,
+      "isFeatured": false,
+      "category": "Italian",
+      "description": "Celebrating Italian grandmothers and their traditional pasta-making techniques passed down through generations.",
+      "recentVideos": [
+        {
+          "id": "vid-006",
+          "title": "92-Year-Old Nonna Makes Fresh Tagliatelle",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1556761223-4c4282c73f77?w=480",
+          "duration": "14:33",
+          "publishedAt": "2026-01-29T10:00:00Z",
+          "viewCount": 156000
+        },
+        {
+          "id": "vid-007",
+          "title": "Handmade Ravioli with Ricotta & Spinach",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1587740908075-9e245070dfaa?w=480",
+          "duration": "16:45",
+          "publishedAt": "2026-01-22T10:00:00Z",
+          "viewCount": 203000
+        }
+      ]
+    },
+    {
+      "id": "ch-004",
+      "name": "Maangchi",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKc8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 6500000,
+      "isFollowing": false,
+      "isFeatured": true,
+      "category": "Asian",
+      "description": "Korean cooking made simple! Learn authentic Korean recipes with easy-to-follow instructions.",
+      "recentVideos": [
+        {
+          "id": "vid-008",
+          "title": "Perfect Kimchi Fried Rice Every Time",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=480",
+          "duration": "11:20",
+          "publishedAt": "2026-02-01T12:00:00Z",
+          "viewCount": 445000
+        },
+        {
+          "id": "vid-009",
+          "title": "Korean Fried Chicken - Extra Crispy!",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1575932444877-5106bee2a599?w=480",
+          "duration": "19:55",
+          "publishedAt": "2026-01-27T12:00:00Z",
+          "viewCount": 678000
+        },
+        {
+          "id": "vid-010",
+          "title": "Homemade Tteokbokki (Spicy Rice Cakes)",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1635963662853-f0ef6a9e4e21?w=480",
+          "duration": "13:40",
+          "publishedAt": "2026-01-20T12:00:00Z",
+          "viewCount": 521000
+        }
+      ]
+    },
+    {
+      "id": "ch-005",
+      "name": "Bon Appétit",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKd8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 6100000,
+      "isFollowing": false,
+      "isFeatured": true,
+      "category": "Quick Meals",
+      "description": "Join the Bon Appétit test kitchen for recipes, tips, and culinary adventures.",
+      "recentVideos": [
+        {
+          "id": "vid-011",
+          "title": "Pro Chefs Make Their Go-To Weeknight Dinners",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=480",
+          "duration": "24:30",
+          "publishedAt": "2026-01-31T18:00:00Z",
+          "viewCount": 892000
+        },
+        {
+          "id": "vid-012",
+          "title": "5-Ingredient Meals That Actually Taste Amazing",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=480",
+          "duration": "16:45",
+          "publishedAt": "2026-01-26T18:00:00Z",
+          "viewCount": 654000
+        }
+      ]
+    },
+    {
+      "id": "ch-006",
+      "name": "Preppy Kitchen",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKe8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 4200000,
+      "isFollowing": true,
+      "isFeatured": false,
+      "category": "Baking",
+      "description": "Delicious and approachable baking recipes. From cookies to cakes, I'll help you bake with confidence!",
+      "recentVideos": [
+        {
+          "id": "vid-013",
+          "title": "The Best Chocolate Chip Cookies You'll Ever Make",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=480",
+          "duration": "12:18",
+          "publishedAt": "2026-02-01T15:00:00Z",
+          "viewCount": 312000
+        },
+        {
+          "id": "vid-014",
+          "title": "Lemon Bars with Perfect Shortbread Crust",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=480",
+          "duration": "14:22",
+          "publishedAt": "2026-01-28T15:00:00Z",
+          "viewCount": 245000
+        }
+      ]
+    },
+    {
+      "id": "ch-007",
+      "name": "Pick Up Limes",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKf8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 3800000,
+      "isFollowing": false,
+      "isFeatured": true,
+      "category": "Healthy",
+      "description": "Plant-based recipes, nutrition tips, and mindful living. Making healthy eating delicious and sustainable.",
+      "recentVideos": [
+        {
+          "id": "vid-015",
+          "title": "High Protein Vegan Meal Prep for the Week",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=480",
+          "duration": "18:40",
+          "publishedAt": "2026-01-30T11:00:00Z",
+          "viewCount": 423000
+        },
+        {
+          "id": "vid-016",
+          "title": "Buddha Bowls 5 Ways",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1540914124281-342587941389?w=480",
+          "duration": "15:33",
+          "publishedAt": "2026-01-23T11:00:00Z",
+          "viewCount": 567000
+        }
+      ]
+    },
+    {
+      "id": "ch-008",
+      "name": "Guga Foods",
+      "avatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKg8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj",
+      "subscriberCount": 4500000,
+      "isFollowing": false,
+      "isFeatured": false,
+      "category": "BBQ & Grilling",
+      "description": "Steak experiments, BBQ techniques, and meat science. Finding the best ways to cook beef.",
+      "recentVideos": [
+        {
+          "id": "vid-017",
+          "title": "I Tried Every Steak Cooking Method",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1558030006-450675393462?w=480",
+          "duration": "21:15",
+          "publishedAt": "2026-01-29T17:00:00Z",
+          "viewCount": 1200000
+        },
+        {
+          "id": "vid-018",
+          "title": "Dry Aged vs Wet Aged Steak - Which is Better?",
+          "thumbnailUrl": "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=480",
+          "duration": "18:45",
+          "publishedAt": "2026-01-22T17:00:00Z",
+          "viewCount": 890000
+        }
+      ]
+    }
+  ],
+  "feedVideos": [
+    {
+      "id": "vid-001",
+      "title": "The Perfect 15-Minute Pasta You Need to Try",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=480",
+      "duration": "12:34",
+      "publishedAt": "2026-02-01T14:00:00Z",
+      "viewCount": 245000,
+      "channelId": "ch-001",
+      "channelName": "Eitan Bernath",
+      "channelAvatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKY8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj"
+    },
+    {
+      "id": "vid-004",
+      "title": "Making The Perfect Homemade Burger Buns",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=480",
+      "duration": "18:22",
+      "publishedAt": "2026-02-02T16:00:00Z",
+      "viewCount": 520000,
+      "channelId": "ch-002",
+      "channelName": "Joshua Weissman",
+      "channelAvatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKa8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj"
+    },
+    {
+      "id": "vid-013",
+      "title": "The Best Chocolate Chip Cookies You'll Ever Make",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=480",
+      "duration": "12:18",
+      "publishedAt": "2026-02-01T15:00:00Z",
+      "viewCount": 312000,
+      "channelId": "ch-006",
+      "channelName": "Preppy Kitchen",
+      "channelAvatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKe8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj"
+    },
+    {
+      "id": "vid-006",
+      "title": "92-Year-Old Nonna Makes Fresh Tagliatelle",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1556761223-4c4282c73f77?w=480",
+      "duration": "14:33",
+      "publishedAt": "2026-01-29T10:00:00Z",
+      "viewCount": 156000,
+      "channelId": "ch-003",
+      "channelName": "Pasta Grannies",
+      "channelAvatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKb8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj"
+    },
+    {
+      "id": "vid-002",
+      "title": "Crispy Smashed Potatoes That Will Change Your Life",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=480",
+      "duration": "8:21",
+      "publishedAt": "2026-01-28T14:00:00Z",
+      "viewCount": 189000,
+      "channelId": "ch-001",
+      "channelName": "Eitan Bernath",
+      "channelAvatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKY8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj"
+    },
+    {
+      "id": "vid-005",
+      "title": "I Made a $500 Steak at Home",
+      "thumbnailUrl": "https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=480",
+      "duration": "22:15",
+      "publishedAt": "2026-01-30T16:00:00Z",
+      "viewCount": 890000,
+      "channelId": "ch-002",
+      "channelName": "Joshua Weissman",
+      "channelAvatarUrl": "https://yt3.googleusercontent.com/ytc/APkrFKa8yQk0fH8Ht7Z6Z9Z9Z9Z9Z9Z9=s176-c-k-c0x00ffffff-no-rj"
+    }
+  ],
+  "recipePreview": {
+    "videoId": "vid-001",
+    "title": "15-Minute Creamy Tuscan Pasta",
+    "ingredientsPreview": ["Penne pasta", "Heavy cream", "Sun-dried tomatoes", "Spinach", "Parmesan cheese", "Garlic", "+ 3 more"],
+    "instructionsPreview": "Cook pasta according to package directions. In a large skillet, sauté garlic until fragrant, then add sun-dried tomatoes...",
+    "estimatedTime": "15 min",
+    "servings": 4
+  }
+}

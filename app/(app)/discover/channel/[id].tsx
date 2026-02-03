@@ -1,0 +1,510 @@
+/**
+ * Channel Detail Screen
+ *
+ * Displays a YouTube channel's profile with header, stats, and latest videos.
+ * Includes follow/unfollow functionality and video extraction.
+ */
+
+import React, { useState, useCallback, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Image,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useQuery, useMutation, useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import {
+  ArrowLeft,
+  Star,
+  Check,
+  Plus,
+  Play,
+} from "lucide-react-native";
+import type { Id } from "@/convex/_generated/dataModel";
+
+import {
+  VideoPlayerModal,
+  YouTubeRecipePreviewModal,
+  useYouTubeExtraction,
+  type ChannelCategory,
+} from "@/components/discover";
+
+/**
+ * Video data from channel
+ */
+interface ChannelVideo {
+  videoId: string;
+  title: string;
+  thumbnailUrl: string;
+  duration: string;
+  viewCount: number;
+  publishedAt: string;
+}
+
+/**
+ * Format subscriber count for display
+ */
+function formatSubscriberCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M subscribers`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(0)}K subscribers`;
+  }
+  return `${count} subscribers`;
+}
+
+/**
+ * Format view count for display
+ */
+function formatViewCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(0)}K`;
+  }
+  return count.toString();
+}
+
+/**
+ * Format time ago from ISO date string
+ */
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+  return `${Math.floor(diffDays / 365)} years ago`;
+}
+
+/**
+ * Get first letter for avatar fallback
+ */
+function getInitial(name: string): string {
+  return name.charAt(0).toUpperCase();
+}
+
+/**
+ * Get category badge color
+ */
+function getCategoryColor(category: string): string {
+  switch (category) {
+    case "Italian":
+      return "bg-green-500";
+    case "Asian":
+      return "bg-red-500";
+    case "Quick Meals":
+      return "bg-blue-500";
+    case "Baking":
+      return "bg-amber-500";
+    case "Healthy":
+      return "bg-emerald-500";
+    case "BBQ & Grilling":
+      return "bg-orange-600";
+    default:
+      return "bg-stone-500";
+  }
+}
+
+export default function ChannelDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  // State
+  const [videos, setVideos] = useState<ChannelVideo[]>([]);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Video player state
+  const [playerVisible, setPlayerVisible] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [selectedVideoTitle, setSelectedVideoTitle] = useState("");
+
+  // Extraction state
+  const {
+    state: extractionState,
+    extractFromVideoId,
+    reset: resetExtraction,
+  } = useYouTubeExtraction();
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+
+  // Convex queries and mutations
+  const channel = useQuery(api.channels.getChannelById, {
+    channelId: id as Id<"youtubeChannels">,
+  });
+  const followChannel = useMutation(api.channels.followChannel);
+  const unfollowChannel = useMutation(api.channels.unfollowChannel);
+  const saveFromYouTube = useMutation(api.recipes.saveFromYouTube);
+
+  // Convex actions
+  const getChannelVideos = useAction(
+    api.actions.youtube.fetchChannelData.getChannelVideos
+  );
+
+  // Fetch videos when channel data is available
+  useEffect(() => {
+    if (channel?.youtubeChannelId) {
+      fetchVideos();
+    }
+  }, [channel?.youtubeChannelId]);
+
+  const fetchVideos = useCallback(async () => {
+    if (!channel?.youtubeChannelId) return;
+
+    setIsLoadingVideos(true);
+    try {
+      const result = await getChannelVideos({
+        channelId: channel.youtubeChannelId,
+        maxResults: 20,
+      });
+
+      if (result.success && result.data) {
+        setVideos(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+    } finally {
+      setIsLoadingVideos(false);
+    }
+  }, [channel?.youtubeChannelId, getChannelVideos]);
+
+  // Handlers
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const handleFollow = useCallback(async () => {
+    if (!channel) return;
+
+    try {
+      await followChannel({
+        youtubeChannelId: channel.youtubeChannelId,
+        name: channel.name,
+        avatarUrl: channel.avatarUrl,
+        subscriberCount: channel.subscriberCount,
+        description: channel.description,
+        videoCount: channel.videoCount,
+        category: channel.category as ChannelCategory,
+      });
+    } catch (error) {
+      console.error("Follow error:", error);
+    }
+  }, [channel, followChannel]);
+
+  const handleUnfollow = useCallback(async () => {
+    if (!channel) return;
+
+    try {
+      await unfollowChannel({
+        channelId: channel._id,
+      });
+    } catch (error) {
+      console.error("Unfollow error:", error);
+    }
+  }, [channel, unfollowChannel]);
+
+  const handleVideoPress = useCallback((video: ChannelVideo) => {
+    setSelectedVideoId(video.videoId);
+    setSelectedVideoTitle(video.title);
+    setPlayerVisible(true);
+  }, []);
+
+  const handleSaveRecipe = useCallback(
+    async (videoId: string) => {
+      setPlayerVisible(false);
+      setPreviewModalVisible(true);
+      await extractFromVideoId(videoId);
+    },
+    [extractFromVideoId]
+  );
+
+  const handleSavePreview = useCallback(
+    async (preview: any) => {
+      try {
+        await saveFromYouTube({
+          title: preview.title,
+          ingredients: preview.ingredients,
+          instructions: preview.instructions,
+          servings: preview.servings,
+          prepTime: preview.prepTime,
+          cookTime: preview.cookTime,
+          youtubeVideoId: preview.videoId,
+          sourceUrl: preview.sourceUrl,
+          imageUrl: preview.thumbnailUrl,
+        });
+
+        setPreviewModalVisible(false);
+        resetExtraction();
+        router.push("/(app)");
+      } catch (error) {
+        console.error("Save error:", error);
+      }
+    },
+    [saveFromYouTube, resetExtraction, router]
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await fetchVideos();
+    setIsRefreshing(false);
+  }, [fetchVideos]);
+
+  // Loading state
+  if (channel === undefined) {
+    return (
+      <View className="flex-1 bg-stone-950 items-center justify-center">
+        <ActivityIndicator size="large" color="#f97316" />
+      </View>
+    );
+  }
+
+  // Not found state
+  if (channel === null) {
+    return (
+      <View className="flex-1 bg-stone-950 items-center justify-center px-4">
+        <Text className="text-white text-lg font-semibold mb-2">
+          Channel Not Found
+        </Text>
+        <Text className="text-stone-400 text-center mb-6">
+          This channel may have been removed or is no longer available.
+        </Text>
+        <Pressable
+          onPress={handleBack}
+          className="px-6 py-3 bg-orange-500 rounded-xl active:bg-orange-600"
+        >
+          <Text className="text-white font-semibold">Go Back</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-stone-950">
+      <ScrollView
+        className="flex-1"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#f97316"
+          />
+        }
+      >
+        {/* Header with Gradient */}
+        <View className="relative">
+          {/* Gradient Background */}
+          <View className="h-32 bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600" />
+
+          {/* Back Button */}
+          <Pressable
+            onPress={handleBack}
+            className="absolute top-12 left-4 w-10 h-10 bg-black/30 rounded-full items-center justify-center active:bg-black/40"
+          >
+            <ArrowLeft size={24} color="#fff" />
+          </Pressable>
+
+          {/* Channel Info Card */}
+          <View className="mx-4 -mt-16 bg-stone-900 rounded-2xl p-6 border border-stone-800">
+            <View className="flex-row items-start gap-4">
+              {/* Avatar */}
+              {channel.avatarUrl ? (
+                <Image
+                  source={{ uri: channel.avatarUrl }}
+                  className="w-20 h-20 rounded-2xl"
+                />
+              ) : (
+                <View className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 items-center justify-center">
+                  <Text className="text-white font-bold text-3xl">
+                    {getInitial(channel.name)}
+                  </Text>
+                </View>
+              )}
+
+              {/* Info */}
+              <View className="flex-1">
+                {/* Name and Featured Badge */}
+                <View className="flex-row items-center gap-2 flex-wrap">
+                  <Text className="text-xl font-bold text-white">
+                    {channel.name}
+                  </Text>
+                  {channel.isFeatured && (
+                    <View className="flex-row items-center gap-1 bg-orange-500/20 px-2 py-0.5 rounded-full">
+                      <Star size={12} color="#f97316" fill="#f97316" />
+                      <Text className="text-orange-500 text-xs font-bold">
+                        Featured
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Stats */}
+                <View className="flex-row items-center gap-4 mt-2">
+                  <Text className="text-stone-400 text-sm">
+                    {formatSubscriberCount(channel.subscriberCount)}
+                  </Text>
+                  <Text className="text-stone-600">|</Text>
+                  <Text className="text-stone-400 text-sm">
+                    {channel.videoCount} videos
+                  </Text>
+                </View>
+
+                {/* Category */}
+                <View
+                  className={`self-start mt-2 px-2 py-0.5 rounded-full ${getCategoryColor(channel.category)}`}
+                >
+                  <Text className="text-white text-xs font-medium">
+                    {channel.category}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Description */}
+            <Text className="text-stone-400 mt-4" numberOfLines={3}>
+              {channel.description}
+            </Text>
+
+            {/* Follow Button */}
+            <Pressable
+              onPress={channel.isFollowing ? handleUnfollow : handleFollow}
+              className={`mt-4 flex-row items-center justify-center gap-2 py-3 rounded-xl ${
+                channel.isFollowing
+                  ? "bg-stone-800 active:bg-stone-700"
+                  : "bg-orange-500 active:bg-orange-600"
+              }`}
+            >
+              {channel.isFollowing ? (
+                <>
+                  <Check size={20} color="#a8a29e" />
+                  <Text className="text-stone-300 font-semibold">
+                    Following
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Plus size={20} color="#fff" />
+                  <Text className="text-white font-semibold">Follow</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Videos Section */}
+        <View className="px-4 py-6">
+          <Text className="text-lg font-bold text-white mb-4">
+            Latest Videos
+          </Text>
+
+          {isLoadingVideos ? (
+            <View className="items-center py-12">
+              <ActivityIndicator size="large" color="#f97316" />
+            </View>
+          ) : videos.length === 0 ? (
+            <View className="items-center py-12">
+              <Text className="text-stone-400">No videos yet</Text>
+            </View>
+          ) : (
+            <View className="flex-row flex-wrap -mx-2">
+              {videos.map((video) => (
+                <View key={video.videoId} className="w-1/2 p-2">
+                  <Pressable
+                    onPress={() => handleVideoPress(video)}
+                    className="bg-stone-900 rounded-xl overflow-hidden border border-stone-800 active:border-orange-500/50"
+                  >
+                    {/* Thumbnail */}
+                    <View className="relative aspect-video">
+                      <Image
+                        source={{ uri: video.thumbnailUrl }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                      {/* Duration Badge */}
+                      <View className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 rounded">
+                        <Text className="text-white text-[10px] font-medium">
+                          {video.duration}
+                        </Text>
+                      </View>
+                      {/* Play Overlay */}
+                      <View className="absolute inset-0 items-center justify-center">
+                        <View className="w-10 h-10 bg-white/90 rounded-full items-center justify-center opacity-0 active:opacity-80">
+                          <Play size={16} color="#1c1917" />
+                        </View>
+                      </View>
+                      {/* Save Recipe Button */}
+                      <Pressable
+                        onPress={() => handleSaveRecipe(video.videoId)}
+                        className="absolute top-1 right-1 w-7 h-7 bg-orange-500 rounded-full items-center justify-center active:bg-orange-600"
+                      >
+                        <Plus size={14} color="#fff" />
+                      </Pressable>
+                    </View>
+
+                    {/* Video Info */}
+                    <View className="p-2">
+                      <Text
+                        className="text-white text-sm font-medium"
+                        numberOfLines={2}
+                      >
+                        {video.title}
+                      </Text>
+                      <Text className="text-stone-500 text-xs mt-1">
+                        {formatViewCount(video.viewCount)} views -{" "}
+                        {formatTimeAgo(video.publishedAt)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Video Player Modal */}
+      {selectedVideoId && (
+        <VideoPlayerModal
+          visible={playerVisible}
+          videoId={selectedVideoId}
+          videoTitle={selectedVideoTitle}
+          onClose={() => {
+            setPlayerVisible(false);
+            setSelectedVideoId(null);
+          }}
+          onSaveRecipe={() => {
+            if (selectedVideoId) {
+              handleSaveRecipe(selectedVideoId);
+            }
+          }}
+        />
+      )}
+
+      {/* Recipe Preview Modal */}
+      <YouTubeRecipePreviewModal
+        visible={previewModalVisible}
+        preview={extractionState.recipePreview}
+        isLoading={
+          extractionState.status === "fetching" ||
+          extractionState.status === "extracting"
+        }
+        onClose={() => {
+          setPreviewModalVisible(false);
+          resetExtraction();
+        }}
+        onSave={handleSavePreview}
+      />
+    </View>
+  );
+}

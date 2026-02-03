@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "title": "Top 25 Cooking YouTube Channels",
+    "description": "A curated list of the top cooking and food YouTube channels for the recipe app",
+    "lastUpdated": "2026-02-02",
+    "source": "Research compilation from multiple sources"
+  },
+  "channels": [
+    {
+      "rank": 1,
+      "name": "Eitan Bernath",
+      "handle": "@eitan",
+      "url": "https://www.youtube.com/@eitan",
+      "subscribers": "362K",
+      "videoCount": 907,
+      "description": "Chef, Author, Entertainer, Entrepreneur, Activist. Eitan is a young culinary star known for his energetic cooking style and approachable recipes. Author of 'Eitan Eats the World' cookbook.",
+      "cuisineTypes": ["American", "International", "Jewish", "Comfort Food"],
+      "contentStyle": "Entertaining cooking tutorials, celebrity chef interviews, food exploration",
+      "targetAudience": "Young home cooks, food enthusiasts, Gen Z and Millennials",
+      "featured": true,
+      "socialLinks": {
+        "instagram": "instagram.com/eitan",
+        "tiktok": "tiktok.com/@eitan",
+        "twitter": "twitter.com/eitanbernath"
+      }
+    },
+    {
+      "rank": 2,
+      "name": "That Little Puff",
+      "handle": "@ThatLittlePuff",
+      "url": "https://www.youtube.com/@ThatLittlePuff",
+      "subscribers": "36.7M",
+      "description": "A viral cooking channel featuring a cat chef creating fun and creative recipes. Known for its unique presentation style with a feline host.",
+      "cuisineTypes": ["Asian", "Fusion", "Creative"],
+      "contentStyle": "ASMR cooking, creative recipes, entertaining food content",
+      "targetAudience": "General audience, families, entertainment seekers"
+    },
+    {
+      "rank": 3,
+      "name": "DONA 도나",
+      "handle": "@DONA",
+      "url": "https://www.youtube.com/@DONA",
+      "subscribers": "33.6M",
+      "description": "Korean cooking channel known for visually stunning food videos and ASMR-style content featuring Korean and Asian cuisine.",
+      "cuisineTypes": ["Korean", "Asian", "Desserts"],
+      "contentStyle": "ASMR cooking, aesthetic food videos, Korean recipes",
+      "targetAudience": "Korean food lovers, ASMR enthusiasts"
+    },
+    {
+      "rank": 4,
+      "name": "Bayashi TV",
+      "handle": "@BayashiTV",
+      "url": "https://www.youtube.com/@BayashiTV",
+      "subscribers": "32.9M",
+      "description": "Japanese cooking channel featuring quick, satisfying cooking videos with impressive knife skills and creative presentations.",
+      "cuisineTypes": ["Japanese", "Asian", "Street Food"],
+      "contentStyle": "Short-form cooking, satisfying food prep, viral recipes",
+      "targetAudience": "Short-form content lovers, Japanese food enthusiasts"
+    },
+    {
+      "rank": 5,
+      "name": "Village Cooking Channel",
+      "handle": "@VillageCookingChannel",
+      "url": "https://www.youtube.com/@VillageCookingChannel",
+      "subscribers": "28.8M",
+      "description": "Indian cooking channel showcasing traditional village-style cooking with large-scale recipes prepared outdoors using traditional methods.",
+      "cuisineTypes": ["Indian", "Traditional", "Village Style"],
+      "contentStyle": "Large-scale cooking, traditional recipes, outdoor cooking",
+      "targetAudience": "Indian food lovers, traditional cooking enthusiasts"
+    },
+    {
+      "rank": 6,
+      "name": "Aja Kitchen",
+      "handle": "@AjaKitchen",
+      "url": "https://www.youtube.com/@AjaKitchen",
+      "subscribers": "28.7M",
+      "description": "Popular cooking channel known for authentic Asian recipes with a home-style touch and easy-to-follow tutorials.",
+      "cuisineTypes": ["Asian", "Indonesian", "Home Cooking"],
+      "contentStyle": "Home cooking tutorials, authentic recipes, family meals",
+      "targetAudience": "Home cooks, Asian cuisine enthusiasts"
+    },
+    {
+      "rank": 7,
+      "name": "李子柒 Liziqi",
+      "handle": "@Liziqi",
+      "url": "https://www.youtube.com/@Liziqi",
+      "subscribers": "27.3M",
+      "description": "Chinese content creator known for cinematic videos showcasing traditional Chinese cooking, farming, and craftsmanship in a rural setting.",
+      "cuisineTypes": ["Chinese", "Traditional", "Farm-to-Table"],
+      "contentStyle": "Cinematic cooking, traditional methods, rural lifestyle",
+      "targetAudience": "Cultural enthusiasts, traditional cooking lovers"
+    },
+    {
+      "rank": 8,
+      "name": "Nick DiGiovanni",
+      "handle": "@NickDiGiovanni",
+      "url": "https://www.youtube.com/@NickDiGiovanni",
+      "subscribers": "27.3M",
+      "description": "Former MasterChef finalist known for making complex recipes approachable, food challenges, and collaborations with other creators.",
+      "cuisineTypes": ["American", "International", "Gourmet"],
+      "contentStyle": "Recipe tutorials, food challenges, collaborations",
+      "targetAudience": "Home cooks, food challenge enthusiasts, young adults"
+    },
+    {
+      "rank": 9,
+      "name": "albert_cancook",
+      "handle": "@albertcancook",
+      "url": "https://www.youtube.com/@albertcancook",
+      "subscribers": "26.7M",
+      "description": "Fast-paced, visually satisfying cooking videos that go viral for their entertainment and educational value.",
+      "cuisineTypes": ["International", "Quick Recipes", "Comfort Food"],
+      "contentStyle": "Fast-paced tutorials, viral recipes, entertaining content",
+      "targetAudience": "Short-form content lovers, quick recipe seekers"
+    },
+    {
+      "rank": 10,
+      "name": "Gordon Ramsay",
+      "handle": "@GordonRamsay",
+      "url": "https://www.youtube.com/@GordonRamsay",
+      "subscribers": "21.5M",
+      "description": "World-renowned celebrity chef sharing professional cooking techniques, recipes, and entertaining content from his restaurants and shows.",
+      "cuisineTypes": ["British", "French", "International", "Fine Dining"],
+      "contentStyle": "Professional techniques, restaurant recipes, entertainment",
+      "targetAudience": "Aspiring chefs, fine dining enthusiasts, TV show fans"
+    },
+    {
+      "rank": 11,
+      "name": "Tasty",
+      "handle": "@Tasty",
+      "url": "https://www.youtube.com/@Tasty",
+      "subscribers": "21.4M",
+      "description": "BuzzFeed's popular food brand known for overhead cooking videos, viral recipes, and easy-to-follow tutorials.",
+      "cuisineTypes": ["American", "International", "Comfort Food", "Desserts"],
+      "contentStyle": "Overhead cooking videos, quick recipes, viral content",
+      "targetAudience": "Home cooks, social media users, beginners"
+    },
+    {
+      "rank": 12,
+      "name": "Amaury Guichon",
+      "handle": "@AmauryGuichon",
+      "url": "https://www.youtube.com/@AmauryGuichon",
+      "subscribers": "21.4M",
+      "description": "World-famous pastry chef known for incredible chocolate sculptures and artistic dessert creations.",
+      "cuisineTypes": ["Pastry", "Chocolate", "Desserts", "French"],
+      "contentStyle": "Artistic desserts, chocolate sculptures, professional techniques",
+      "targetAudience": "Pastry enthusiasts, chocolate lovers, aspiring pastry chefs"
+    },
+    {
+      "rank": 13,
+      "name": "Joshua Weissman",
+      "handle": "@JoshuaWeissman",
+      "url": "https://www.youtube.com/@JoshuaWeissman",
+      "subscribers": "10.2M",
+      "description": "Popular food YouTuber known for 'But Better' and 'But Cheaper' series, making restaurant-quality food at home.",
+      "cuisineTypes": ["American", "International", "Fast Food Remakes"],
+      "contentStyle": "Recipe comparisons, homemade versions, entertaining tutorials",
+      "targetAudience": "Home cooks, budget-conscious foodies, young adults"
+    },
+    {
+      "rank": 14,
+      "name": "Babish Culinary Universe",
+      "handle": "@BaijuBhatt",
+      "url": "https://www.youtube.com/@babishculinaryuniverse",
+      "subscribers": "10M",
+      "description": "Andrew Rea's channel featuring 'Binging with Babish' series recreating dishes from movies, TV shows, and video games.",
+      "cuisineTypes": ["American", "International", "Pop Culture Recipes"],
+      "contentStyle": "Pop culture recipe recreations, technique tutorials, basics series",
+      "targetAudience": "Pop culture fans, home cooks, entertainment enthusiasts"
+    },
+    {
+      "rank": 15,
+      "name": "Maangchi",
+      "handle": "@Maangchi",
+      "url": "https://www.youtube.com/@Maangchi",
+      "subscribers": "6.5M",
+      "description": "The 'YouTube's Korean Julia Child' known for authentic Korean recipes with detailed instructions and warm personality.",
+      "cuisineTypes": ["Korean", "Traditional Korean"],
+      "contentStyle": "Authentic recipes, detailed tutorials, traditional cooking",
+      "targetAudience": "Korean food enthusiasts, home cooks, cultural learners"
+    },
+    {
+      "rank": 16,
+      "name": "Food Network",
+      "handle": "@FoodNetwork",
+      "url": "https://www.youtube.com/@FoodNetwork",
+      "subscribers": "12.8M",
+      "description": "Official YouTube channel of Food Network featuring clips from popular shows and recipes from celebrity chefs.",
+      "cuisineTypes": ["American", "International", "Various"],
+      "contentStyle": "TV show clips, celebrity chef recipes, cooking competitions",
+      "targetAudience": "TV show fans, general cooking enthusiasts"
+    },
+    {
+      "rank": 17,
+      "name": "Marion's Kitchen",
+      "handle": "@MarionsKitchen",
+      "url": "https://www.youtube.com/@MarionsKitchen",
+      "subscribers": "4.8M",
+      "description": "Australian-Thai food blogger sharing authentic Asian recipes with easy-to-follow instructions.",
+      "cuisineTypes": ["Thai", "Asian", "Southeast Asian"],
+      "contentStyle": "Authentic Asian recipes, meal prep, family cooking",
+      "targetAudience": "Asian food lovers, home cooks, meal preppers"
+    },
+    {
+      "rank": 18,
+      "name": "Adam Ragusea",
+      "handle": "@AdamRagusea",
+      "url": "https://www.youtube.com/@AdamRagusea",
+      "subscribers": "2.3M",
+      "description": "Food science and practical home cooking channel focusing on why recipes work and how to adapt them.",
+      "cuisineTypes": ["American", "International", "Science-Based"],
+      "contentStyle": "Food science, practical recipes, educational content",
+      "targetAudience": "Curious cooks, science enthusiasts, home cooks"
+    },
+    {
+      "rank": 19,
+      "name": "Chinese Cooking Demystified",
+      "handle": "@ChineseCookingDemystified",
+      "url": "https://www.youtube.com/@ChineseCookingDemystified",
+      "subscribers": "1.5M",
+      "description": "In-depth exploration of authentic Chinese cooking techniques and regional cuisines.",
+      "cuisineTypes": ["Chinese", "Regional Chinese", "Traditional"],
+      "contentStyle": "Authentic techniques, regional recipes, cultural context",
+      "targetAudience": "Chinese food enthusiasts, serious home cooks"
+    },
+    {
+      "rank": 20,
+      "name": "Nisha Madhulika",
+      "handle": "@NishaMadhulika",
+      "url": "https://www.youtube.com/@NishaMadhulika",
+      "subscribers": "14.9M",
+      "description": "Popular Indian cooking channel featuring vegetarian recipes and traditional Indian dishes.",
+      "cuisineTypes": ["Indian", "Vegetarian", "Traditional Indian"],
+      "contentStyle": "Vegetarian recipes, traditional cooking, Hindi tutorials",
+      "targetAudience": "Indian home cooks, vegetarians, Hindi speakers"
+    },
+    {
+      "rank": 21,
+      "name": "Brian Lagerstrom",
+      "handle": "@BrianLagerstrom",
+      "url": "https://www.youtube.com/@BrianLagerstrom",
+      "subscribers": "1.8M",
+      "description": "Former professional chef sharing restaurant-quality recipes adapted for home cooking.",
+      "cuisineTypes": ["American", "International", "Restaurant-Style"],
+      "contentStyle": "Professional techniques, home-adapted recipes, in-depth tutorials",
+      "targetAudience": "Serious home cooks, aspiring chefs"
+    },
+    {
+      "rank": 22,
+      "name": "Bon Appétit",
+      "handle": "@BonAppetit",
+      "url": "https://www.youtube.com/@BonAppetit",
+      "subscribers": "6.2M",
+      "description": "Bon Appétit magazine's YouTube channel featuring test kitchen recipes and cooking techniques.",
+      "cuisineTypes": ["American", "International", "Gourmet"],
+      "contentStyle": "Test kitchen recipes, technique videos, chef personalities",
+      "targetAudience": "Food enthusiasts, magazine readers, aspiring cooks"
+    },
+    {
+      "rank": 23,
+      "name": "America's Test Kitchen",
+      "handle": "@AmericasTestKitchen",
+      "url": "https://www.youtube.com/@AmericasTestKitchen",
+      "subscribers": "2.1M",
+      "description": "Science-based cooking channel with rigorously tested recipes and equipment reviews.",
+      "cuisineTypes": ["American", "International", "Science-Based"],
+      "contentStyle": "Tested recipes, equipment reviews, technique explanations",
+      "targetAudience": "Detail-oriented cooks, recipe perfectionists"
+    },
+    {
+      "rank": 24,
+      "name": "Kabita's Kitchen",
+      "handle": "@KabitasKitchen",
+      "url": "https://www.youtube.com/@KabitasKitchen",
+      "subscribers": "14.4M",
+      "description": "Popular Indian cooking channel featuring easy-to-make Indian recipes for everyday cooking.",
+      "cuisineTypes": ["Indian", "North Indian", "Home Cooking"],
+      "contentStyle": "Easy recipes, everyday cooking, Hindi tutorials",
+      "targetAudience": "Indian home cooks, beginners, Hindi speakers"
+    },
+    {
+      "rank": 25,
+      "name": "Pailin's Kitchen",
+      "handle": "@PailinsKitchen",
+      "url": "https://www.youtube.com/@PailinsKitchen",
+      "subscribers": "1.2M",
+      "description": "Authentic Thai cooking channel run by a Thai-Canadian chef sharing traditional recipes.",
+      "cuisineTypes": ["Thai", "Southeast Asian", "Traditional"],
+      "contentStyle": "Authentic Thai recipes, cultural context, detailed instructions",
+      "targetAudience": "Thai food enthusiasts, home cooks, cultural learners"
+    }
+  ]
+}

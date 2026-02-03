@@ -1,0 +1,271 @@
+{
+  "_meta": {
+    "models": {
+      "mealPlan": "A weekly plan where users assign recipes to specific days and meal slots. Provides a visual calendar view for planning ahead.",
+      "plannedMeal": "A recipe assigned to a specific day and meal slot within the plan, showing the recipe details and when it's scheduled.",
+      "recipePickerItem": "A simplified recipe reference for the sidebar picker, showing just enough info to drag onto the calendar."
+    },
+    "relationships": [
+      "MealPlan contains many PlannedMeals (one per filled slot)",
+      "Each PlannedMeal references a Recipe from the user's library",
+      "RecipePickerItems are drawn from the user's saved Recipes"
+    ]
+  },
+  "currentWeek": {
+    "startDate": "2026-02-02",
+    "endDate": "2026-02-08",
+    "weekLabel": "Feb 2 - 8, 2026"
+  },
+  "mealSlots": ["breakfast", "lunch", "dinner", "snacks"],
+  "plannedMeals": [
+    {
+      "id": "pm-001",
+      "recipeId": "rec-020",
+      "recipeName": "Overnight Oats 4 Ways",
+      "recipeImage": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+      "prepTime": "5 min",
+      "day": "2026-02-02",
+      "slot": "breakfast"
+    },
+    {
+      "id": "pm-002",
+      "recipeId": "rec-009",
+      "recipeName": "Mediterranean Quinoa Salad",
+      "recipeImage": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
+      "prepTime": "20 min",
+      "day": "2026-02-02",
+      "slot": "lunch"
+    },
+    {
+      "id": "pm-003",
+      "recipeId": "rec-001",
+      "recipeName": "Creamy Tuscan Chicken",
+      "recipeImage": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400",
+      "prepTime": "30 min",
+      "day": "2026-02-02",
+      "slot": "dinner"
+    },
+    {
+      "id": "pm-004",
+      "recipeId": "rec-020",
+      "recipeName": "Overnight Oats 4 Ways",
+      "recipeImage": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+      "prepTime": "5 min",
+      "day": "2026-02-03",
+      "slot": "breakfast"
+    },
+    {
+      "id": "pm-005",
+      "recipeId": "rec-003",
+      "recipeName": "Classic Beef Tacos",
+      "recipeImage": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400",
+      "prepTime": "25 min",
+      "day": "2026-02-03",
+      "slot": "dinner"
+    },
+    {
+      "id": "pm-006",
+      "recipeId": "rec-008",
+      "recipeName": "Chocolate Lava Cakes",
+      "recipeImage": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400",
+      "prepTime": "35 min",
+      "day": "2026-02-03",
+      "slot": "snacks"
+    },
+    {
+      "id": "pm-007",
+      "recipeId": "rec-018",
+      "recipeName": "Grilled Chicken Buddha Bowl",
+      "recipeImage": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+      "prepTime": "25 min",
+      "day": "2026-02-04",
+      "slot": "lunch"
+    },
+    {
+      "id": "pm-008",
+      "recipeId": "rec-012",
+      "recipeName": "15-Minute Garlic Shrimp Pasta",
+      "recipeImage": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400",
+      "prepTime": "15 min",
+      "day": "2026-02-04",
+      "slot": "dinner"
+    },
+    {
+      "id": "pm-009",
+      "recipeId": "rec-020",
+      "recipeName": "Overnight Oats 4 Ways",
+      "recipeImage": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+      "prepTime": "5 min",
+      "day": "2026-02-05",
+      "slot": "breakfast"
+    },
+    {
+      "id": "pm-010",
+      "recipeId": "rec-014",
+      "recipeName": "Easy Fried Rice",
+      "recipeImage": "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400",
+      "prepTime": "20 min",
+      "day": "2026-02-05",
+      "slot": "lunch"
+    },
+    {
+      "id": "pm-011",
+      "recipeId": "rec-007",
+      "recipeName": "Thai Green Curry",
+      "recipeImage": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
+      "prepTime": "35 min",
+      "day": "2026-02-05",
+      "slot": "dinner"
+    },
+    {
+      "id": "pm-012",
+      "recipeId": "rec-005",
+      "recipeName": "Homemade Margherita Pizza",
+      "recipeImage": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400",
+      "prepTime": "45 min",
+      "day": "2026-02-06",
+      "slot": "dinner"
+    },
+    {
+      "id": "pm-013",
+      "recipeId": "rec-021",
+      "recipeName": "Salmon with Roasted Vegetables",
+      "recipeImage": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+      "prepTime": "40 min",
+      "day": "2026-02-07",
+      "slot": "dinner"
+    },
+    {
+      "id": "pm-014",
+      "recipeId": "rec-011",
+      "recipeName": "Korean Bibimbap Bowl",
+      "recipeImage": "https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=400",
+      "prepTime": "30 min",
+      "day": "2026-02-08",
+      "slot": "lunch"
+    },
+    {
+      "id": "pm-015",
+      "recipeId": "rec-013",
+      "recipeName": "One-Pan Lemon Herb Chicken",
+      "recipeImage": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400",
+      "prepTime": "35 min",
+      "day": "2026-02-08",
+      "slot": "dinner"
+    }
+  ],
+  "recipePickerItems": [
+    {
+      "id": "rec-001",
+      "name": "Creamy Tuscan Chicken",
+      "image": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400",
+      "prepTime": "30 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-003",
+      "name": "Classic Beef Tacos",
+      "image": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400",
+      "prepTime": "25 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-005",
+      "name": "Homemade Margherita Pizza",
+      "image": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400",
+      "prepTime": "45 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-007",
+      "name": "Thai Green Curry",
+      "image": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400",
+      "prepTime": "35 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-008",
+      "name": "Chocolate Lava Cakes",
+      "image": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400",
+      "prepTime": "35 min",
+      "category": "snacks"
+    },
+    {
+      "id": "rec-009",
+      "name": "Mediterranean Quinoa Salad",
+      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400",
+      "prepTime": "20 min",
+      "category": "lunch"
+    },
+    {
+      "id": "rec-011",
+      "name": "Korean Bibimbap Bowl",
+      "image": "https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=400",
+      "prepTime": "30 min",
+      "category": "lunch"
+    },
+    {
+      "id": "rec-012",
+      "name": "15-Minute Garlic Shrimp Pasta",
+      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400",
+      "prepTime": "15 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-013",
+      "name": "One-Pan Lemon Herb Chicken",
+      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400",
+      "prepTime": "35 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-014",
+      "name": "Easy Fried Rice",
+      "image": "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400",
+      "prepTime": "20 min",
+      "category": "lunch"
+    },
+    {
+      "id": "rec-018",
+      "name": "Grilled Chicken Buddha Bowl",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
+      "prepTime": "25 min",
+      "category": "lunch"
+    },
+    {
+      "id": "rec-020",
+      "name": "Overnight Oats 4 Ways",
+      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400",
+      "prepTime": "5 min",
+      "category": "breakfast"
+    },
+    {
+      "id": "rec-021",
+      "name": "Salmon with Roasted Vegetables",
+      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400",
+      "prepTime": "40 min",
+      "category": "dinner"
+    },
+    {
+      "id": "rec-023",
+      "name": "Avocado Toast with Eggs",
+      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400",
+      "prepTime": "10 min",
+      "category": "breakfast"
+    },
+    {
+      "id": "rec-024",
+      "name": "Smoothie Bowl",
+      "image": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400",
+      "prepTime": "10 min",
+      "category": "breakfast"
+    },
+    {
+      "id": "rec-025",
+      "name": "Energy Bites",
+      "image": "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400",
+      "prepTime": "15 min",
+      "category": "snacks"
+    }
+  ]
+}

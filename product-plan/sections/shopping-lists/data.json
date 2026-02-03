@@ -1,0 +1,461 @@
+{
+  "_meta": {
+    "models": {
+      "shoppingLists": "A shopping list generated from meal plans or created manually. Contains ingredients organized by category with tracking for what's been purchased.",
+      "shoppingItems": "Individual items on a shopping list with quantity, unit, and category. Items can come from recipes or be added manually by the user."
+    },
+    "relationships": [
+      "Each ShoppingList contains many ShoppingItems",
+      "ShoppingItems can optionally link back to the Recipe they came from",
+      "Custom items (added manually) have no recipe association"
+    ]
+  },
+  "shoppingLists": [
+    {
+      "id": "list-001",
+      "name": "Week of Feb 2",
+      "createdAt": "2026-02-02T10:00:00Z",
+      "status": "active",
+      "totalItems": 24,
+      "checkedItems": 8,
+      "items": [
+        {
+          "id": "item-001",
+          "name": "Chicken breast",
+          "quantity": 2,
+          "unit": "lbs",
+          "category": "Meat & Seafood",
+          "isChecked": true,
+          "recipeId": "recipe-tuscan",
+          "recipeName": "Creamy Tuscan Chicken",
+          "isCustom": false
+        },
+        {
+          "id": "item-002",
+          "name": "Salmon fillets",
+          "quantity": 4,
+          "unit": "pieces",
+          "category": "Meat & Seafood",
+          "isChecked": false,
+          "recipeId": "recipe-salmon",
+          "recipeName": "Salmon with Roasted Vegetables",
+          "isCustom": false
+        },
+        {
+          "id": "item-003",
+          "name": "Ground beef",
+          "quantity": 1.5,
+          "unit": "lbs",
+          "category": "Meat & Seafood",
+          "isChecked": true,
+          "recipeId": "recipe-tacos",
+          "recipeName": "Classic Beef Tacos",
+          "isCustom": false
+        },
+        {
+          "id": "item-004",
+          "name": "Shrimp",
+          "quantity": 1,
+          "unit": "lb",
+          "category": "Meat & Seafood",
+          "isChecked": false,
+          "recipeId": "recipe-shrimp",
+          "recipeName": "15-Minute Garlic Shrimp Pasta",
+          "isCustom": false
+        },
+        {
+          "id": "item-005",
+          "name": "Spinach",
+          "quantity": 2,
+          "unit": "bags",
+          "category": "Produce",
+          "isChecked": true,
+          "recipeId": "recipe-tuscan",
+          "recipeName": "Creamy Tuscan Chicken",
+          "isCustom": false
+        },
+        {
+          "id": "item-006",
+          "name": "Cherry tomatoes",
+          "quantity": 2,
+          "unit": "pints",
+          "category": "Produce",
+          "isChecked": false,
+          "recipeId": "recipe-quinoa",
+          "recipeName": "Mediterranean Quinoa Salad",
+          "isCustom": false
+        },
+        {
+          "id": "item-007",
+          "name": "Bell peppers",
+          "quantity": 4,
+          "unit": "pieces",
+          "category": "Produce",
+          "isChecked": false,
+          "recipeId": "recipe-bibimbap",
+          "recipeName": "Korean Bibimbap Bowl",
+          "isCustom": false
+        },
+        {
+          "id": "item-008",
+          "name": "Broccoli",
+          "quantity": 2,
+          "unit": "heads",
+          "category": "Produce",
+          "isChecked": true,
+          "recipeId": "recipe-salmon",
+          "recipeName": "Salmon with Roasted Vegetables",
+          "isCustom": false
+        },
+        {
+          "id": "item-009",
+          "name": "Garlic",
+          "quantity": 2,
+          "unit": "heads",
+          "category": "Produce",
+          "isChecked": true,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": false
+        },
+        {
+          "id": "item-010",
+          "name": "Lemons",
+          "quantity": 4,
+          "unit": "pieces",
+          "category": "Produce",
+          "isChecked": false,
+          "recipeId": "recipe-chicken",
+          "recipeName": "One-Pan Lemon Herb Chicken",
+          "isCustom": false
+        },
+        {
+          "id": "item-011",
+          "name": "Avocados",
+          "quantity": 3,
+          "unit": "pieces",
+          "category": "Produce",
+          "isChecked": false,
+          "recipeId": "recipe-tacos",
+          "recipeName": "Classic Beef Tacos",
+          "isCustom": false
+        },
+        {
+          "id": "item-012",
+          "name": "Heavy cream",
+          "quantity": 1,
+          "unit": "pint",
+          "category": "Dairy & Eggs",
+          "isChecked": true,
+          "recipeId": "recipe-tuscan",
+          "recipeName": "Creamy Tuscan Chicken",
+          "isCustom": false
+        },
+        {
+          "id": "item-013",
+          "name": "Parmesan cheese",
+          "quantity": 8,
+          "unit": "oz",
+          "category": "Dairy & Eggs",
+          "isChecked": false,
+          "recipeId": "recipe-shrimp",
+          "recipeName": "15-Minute Garlic Shrimp Pasta",
+          "isCustom": false
+        },
+        {
+          "id": "item-014",
+          "name": "Eggs",
+          "quantity": 12,
+          "unit": "pieces",
+          "category": "Dairy & Eggs",
+          "isChecked": true,
+          "recipeId": "recipe-bibimbap",
+          "recipeName": "Korean Bibimbap Bowl",
+          "isCustom": false
+        },
+        {
+          "id": "item-015",
+          "name": "Feta cheese",
+          "quantity": 6,
+          "unit": "oz",
+          "category": "Dairy & Eggs",
+          "isChecked": false,
+          "recipeId": "recipe-quinoa",
+          "recipeName": "Mediterranean Quinoa Salad",
+          "isCustom": false
+        },
+        {
+          "id": "item-016",
+          "name": "Spaghetti",
+          "quantity": 1,
+          "unit": "lb",
+          "category": "Pantry",
+          "isChecked": false,
+          "recipeId": "recipe-shrimp",
+          "recipeName": "15-Minute Garlic Shrimp Pasta",
+          "isCustom": false
+        },
+        {
+          "id": "item-017",
+          "name": "Quinoa",
+          "quantity": 2,
+          "unit": "cups",
+          "category": "Pantry",
+          "isChecked": false,
+          "recipeId": "recipe-quinoa",
+          "recipeName": "Mediterranean Quinoa Salad",
+          "isCustom": false
+        },
+        {
+          "id": "item-018",
+          "name": "Coconut milk",
+          "quantity": 2,
+          "unit": "cans",
+          "category": "Pantry",
+          "isChecked": false,
+          "recipeId": "recipe-curry",
+          "recipeName": "Thai Green Curry",
+          "isCustom": false
+        },
+        {
+          "id": "item-019",
+          "name": "Taco shells",
+          "quantity": 1,
+          "unit": "box",
+          "category": "Pantry",
+          "isChecked": true,
+          "recipeId": "recipe-tacos",
+          "recipeName": "Classic Beef Tacos",
+          "isCustom": false
+        },
+        {
+          "id": "item-020",
+          "name": "Rolled oats",
+          "quantity": 1,
+          "unit": "container",
+          "category": "Pantry",
+          "isChecked": false,
+          "recipeId": "recipe-oats",
+          "recipeName": "Overnight Oats 4 Ways",
+          "isCustom": false
+        },
+        {
+          "id": "item-021",
+          "name": "Pizza dough",
+          "quantity": 2,
+          "unit": "balls",
+          "category": "Bakery",
+          "isChecked": false,
+          "recipeId": "recipe-pizza",
+          "recipeName": "Homemade Margherita Pizza",
+          "isCustom": false
+        },
+        {
+          "id": "item-022",
+          "name": "Paper towels",
+          "quantity": 1,
+          "unit": "pack",
+          "category": "Household",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-023",
+          "name": "Sparkling water",
+          "quantity": 2,
+          "unit": "packs",
+          "category": "Beverages",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-024",
+          "name": "Dog food",
+          "quantity": 1,
+          "unit": "bag",
+          "category": "Household",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        }
+      ]
+    },
+    {
+      "id": "list-002",
+      "name": "Weekend BBQ",
+      "createdAt": "2026-02-01T14:30:00Z",
+      "status": "active",
+      "totalItems": 12,
+      "checkedItems": 0,
+      "items": [
+        {
+          "id": "item-101",
+          "name": "Ribeye steaks",
+          "quantity": 4,
+          "unit": "pieces",
+          "category": "Meat & Seafood",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-102",
+          "name": "Burger patties",
+          "quantity": 8,
+          "unit": "pieces",
+          "category": "Meat & Seafood",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-103",
+          "name": "Hot dogs",
+          "quantity": 1,
+          "unit": "pack",
+          "category": "Meat & Seafood",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-104",
+          "name": "Corn on the cob",
+          "quantity": 8,
+          "unit": "ears",
+          "category": "Produce",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-105",
+          "name": "Coleslaw mix",
+          "quantity": 2,
+          "unit": "bags",
+          "category": "Produce",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-106",
+          "name": "Burger buns",
+          "quantity": 1,
+          "unit": "pack",
+          "category": "Bakery",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-107",
+          "name": "Hot dog buns",
+          "quantity": 1,
+          "unit": "pack",
+          "category": "Bakery",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-108",
+          "name": "American cheese",
+          "quantity": 1,
+          "unit": "pack",
+          "category": "Dairy & Eggs",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-109",
+          "name": "Ketchup",
+          "quantity": 1,
+          "unit": "bottle",
+          "category": "Pantry",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-110",
+          "name": "Mustard",
+          "quantity": 1,
+          "unit": "bottle",
+          "category": "Pantry",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-111",
+          "name": "Charcoal",
+          "quantity": 1,
+          "unit": "bag",
+          "category": "Household",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        },
+        {
+          "id": "item-112",
+          "name": "Beer",
+          "quantity": 2,
+          "unit": "6-packs",
+          "category": "Beverages",
+          "isChecked": false,
+          "recipeId": null,
+          "recipeName": null,
+          "isCustom": true
+        }
+      ]
+    },
+    {
+      "id": "list-003",
+      "name": "Week of Jan 26",
+      "createdAt": "2026-01-26T09:15:00Z",
+      "status": "archived",
+      "completedAt": "2026-01-27T16:42:00Z",
+      "totalItems": 18,
+      "checkedItems": 18,
+      "items": []
+    },
+    {
+      "id": "list-004",
+      "name": "Meal Prep Sunday",
+      "createdAt": "2026-01-19T08:00:00Z",
+      "status": "archived",
+      "completedAt": "2026-01-19T11:30:00Z",
+      "totalItems": 15,
+      "checkedItems": 15,
+      "items": []
+    }
+  ],
+  "categories": [
+    "Produce",
+    "Meat & Seafood",
+    "Dairy & Eggs",
+    "Pantry",
+    "Bakery",
+    "Frozen",
+    "Beverages",
+    "Household"
+  ]
+}

@@ -1,0 +1,19 @@
+/* Design Tokens for Digero */
+
+:root {
+  /* Colors - Using Tailwind's color palette */
+  --color-primary: theme('colors.orange');
+  --color-secondary: theme('colors.green');
+  --color-neutral: theme('colors.stone');
+
+  /* Typography */
+  --font-heading: 'Nunito Sans', sans-serif;
+  --font-body: 'Nunito Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* Common color utilities */
+.text-primary { color: theme('colors.orange.600'); }
+.text-secondary { color: theme('colors.green.600'); }
+.bg-primary { background-color: theme('colors.orange.500'); }
+.bg-secondary { background-color: theme('colors.green.500'); }

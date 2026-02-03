@@ -1,0 +1,342 @@
+{
+  "_meta": {
+    "models": {
+      "recipes": "Each recipe represents a saved dish with ingredients, instructions, and details about where it came from (YouTube, website, scanned cookbook, or manually entered)."
+    },
+    "relationships": [
+      "Recipes can belong to multiple Cookbooks",
+      "Recipes can be assigned to MealPlans on specific days and meal slots",
+      "Recipe ingredients can be added to ShoppingLists"
+    ]
+  },
+  "recipes": [
+    {
+      "id": "rec-001",
+      "title": "Creamy Tuscan Chicken",
+      "source": "youtube",
+      "sourceUrl": "https://www.youtube.com/watch?v=abc123",
+      "youtubeVideoId": "abc123",
+      "imageUrl": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800",
+      "servings": 4,
+      "prepTime": 15,
+      "cookTime": 25,
+      "ingredients": [
+        { "name": "chicken breasts", "quantity": 4, "unit": "pieces", "category": "meat" },
+        { "name": "sun-dried tomatoes", "quantity": 0.5, "unit": "cup", "category": "produce" },
+        { "name": "spinach", "quantity": 2, "unit": "cups", "category": "produce" },
+        { "name": "heavy cream", "quantity": 1, "unit": "cup", "category": "dairy" },
+        { "name": "parmesan cheese", "quantity": 0.5, "unit": "cup", "category": "dairy" },
+        { "name": "garlic", "quantity": 4, "unit": "cloves", "category": "produce" },
+        { "name": "olive oil", "quantity": 2, "unit": "tbsp", "category": "pantry" },
+        { "name": "Italian seasoning", "quantity": 1, "unit": "tsp", "category": "spices" }
+      ],
+      "instructions": [
+        "Season chicken breasts with salt, pepper, and Italian seasoning.",
+        "Heat olive oil in a large skillet over medium-high heat.",
+        "Cook chicken for 6-7 minutes per side until golden and cooked through. Remove and set aside.",
+        "In the same skillet, sauté garlic for 30 seconds until fragrant.",
+        "Add sun-dried tomatoes and cook for 2 minutes.",
+        "Pour in heavy cream and bring to a simmer.",
+        "Stir in parmesan cheese until melted and smooth.",
+        "Add spinach and cook until wilted, about 2 minutes.",
+        "Return chicken to the skillet and spoon sauce over the top.",
+        "Serve immediately over pasta or with crusty bread."
+      ],
+      "nutrition": {
+        "calories": 485,
+        "protein": 42,
+        "carbs": 8,
+        "fat": 32
+      },
+      "notes": "From Eitan Bernath's channel - family favorite!",
+      "createdAt": "2026-01-15T10:30:00Z"
+    },
+    {
+      "id": "rec-002",
+      "title": "Classic Beef Tacos",
+      "source": "website",
+      "sourceUrl": "https://www.seriouseats.com/beef-tacos",
+      "youtubeVideoId": null,
+      "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800",
+      "servings": 6,
+      "prepTime": 10,
+      "cookTime": 20,
+      "ingredients": [
+        { "name": "ground beef", "quantity": 1.5, "unit": "lbs", "category": "meat" },
+        { "name": "taco seasoning", "quantity": 2, "unit": "tbsp", "category": "spices" },
+        { "name": "corn tortillas", "quantity": 12, "unit": "pieces", "category": "bread" },
+        { "name": "cheddar cheese", "quantity": 1, "unit": "cup", "category": "dairy" },
+        { "name": "lettuce", "quantity": 2, "unit": "cups", "category": "produce" },
+        { "name": "tomatoes", "quantity": 2, "unit": "pieces", "category": "produce" },
+        { "name": "sour cream", "quantity": 0.5, "unit": "cup", "category": "dairy" },
+        { "name": "salsa", "quantity": 1, "unit": "cup", "category": "condiments" }
+      ],
+      "instructions": [
+        "Brown the ground beef in a large skillet over medium-high heat, breaking it up as it cooks.",
+        "Drain excess fat and add taco seasoning with 1/4 cup water.",
+        "Simmer for 5 minutes until the sauce thickens.",
+        "Warm tortillas in a dry skillet or microwave.",
+        "Dice tomatoes and shred lettuce for toppings.",
+        "Assemble tacos with beef, cheese, lettuce, tomatoes, sour cream, and salsa."
+      ],
+      "nutrition": {
+        "calories": 380,
+        "protein": 24,
+        "carbs": 28,
+        "fat": 19
+      },
+      "notes": "",
+      "createdAt": "2026-01-20T14:15:00Z"
+    },
+    {
+      "id": "rec-003",
+      "title": "Grandma's Banana Bread",
+      "source": "scanned",
+      "sourceUrl": null,
+      "youtubeVideoId": null,
+      "imageUrl": "https://images.unsplash.com/photo-1606101273945-e9eba27c77c5?w=800",
+      "servings": 10,
+      "prepTime": 15,
+      "cookTime": 60,
+      "ingredients": [
+        { "name": "ripe bananas", "quantity": 3, "unit": "pieces", "category": "produce" },
+        { "name": "all-purpose flour", "quantity": 2, "unit": "cups", "category": "pantry" },
+        { "name": "sugar", "quantity": 0.75, "unit": "cup", "category": "pantry" },
+        { "name": "butter", "quantity": 0.5, "unit": "cup", "category": "dairy" },
+        { "name": "egg", "quantity": 1, "unit": "piece", "category": "dairy" },
+        { "name": "baking soda", "quantity": 1, "unit": "tsp", "category": "pantry" },
+        { "name": "salt", "quantity": 0.25, "unit": "tsp", "category": "spices" },
+        { "name": "vanilla extract", "quantity": 1, "unit": "tsp", "category": "pantry" },
+        { "name": "walnuts", "quantity": 0.5, "unit": "cup", "category": "pantry" }
+      ],
+      "instructions": [
+        "Preheat oven to 350°F (175°C). Grease a 9x5 inch loaf pan.",
+        "Mash bananas in a large bowl until smooth.",
+        "Melt butter and mix into bananas.",
+        "Beat in sugar, egg, and vanilla extract.",
+        "In a separate bowl, whisk together flour, baking soda, and salt.",
+        "Fold dry ingredients into banana mixture until just combined.",
+        "Fold in walnuts if using.",
+        "Pour batter into prepared pan.",
+        "Bake for 55-60 minutes until a toothpick comes out clean.",
+        "Cool in pan for 10 minutes, then turn out onto a wire rack."
+      ],
+      "nutrition": {
+        "calories": 245,
+        "protein": 4,
+        "carbs": 38,
+        "fat": 9
+      },
+      "notes": "Scanned from Mom's old recipe box. The secret is using very ripe bananas - the blacker the better!",
+      "createdAt": "2026-01-22T09:00:00Z",
+      "scannedFromBook": {
+        "name": "Mom's Recipe Box",
+        "coverImageUrl": "https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=800"
+      }
+    },
+    {
+      "id": "rec-004",
+      "title": "Thai Green Curry",
+      "source": "youtube",
+      "sourceUrl": "https://www.youtube.com/watch?v=def456",
+      "youtubeVideoId": "def456",
+      "imageUrl": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800",
+      "servings": 4,
+      "prepTime": 20,
+      "cookTime": 25,
+      "ingredients": [
+        { "name": "chicken thighs", "quantity": 1, "unit": "lb", "category": "meat" },
+        { "name": "green curry paste", "quantity": 3, "unit": "tbsp", "category": "condiments" },
+        { "name": "coconut milk", "quantity": 2, "unit": "cans", "category": "pantry" },
+        { "name": "bamboo shoots", "quantity": 1, "unit": "cup", "category": "produce" },
+        { "name": "Thai basil", "quantity": 1, "unit": "cup", "category": "produce" },
+        { "name": "bell pepper", "quantity": 1, "unit": "piece", "category": "produce" },
+        { "name": "fish sauce", "quantity": 2, "unit": "tbsp", "category": "condiments" },
+        { "name": "brown sugar", "quantity": 1, "unit": "tbsp", "category": "pantry" },
+        { "name": "jasmine rice", "quantity": 2, "unit": "cups", "category": "pantry" }
+      ],
+      "instructions": [
+        "Cut chicken thighs into bite-sized pieces.",
+        "Heat a wok or large pan over high heat.",
+        "Add 1/2 cup of coconut milk and the curry paste, stir until fragrant.",
+        "Add chicken and cook until no longer pink on the outside.",
+        "Pour in remaining coconut milk and bring to a simmer.",
+        "Add bamboo shoots and sliced bell pepper.",
+        "Season with fish sauce and brown sugar to taste.",
+        "Simmer for 15 minutes until chicken is cooked through.",
+        "Stir in Thai basil just before serving.",
+        "Serve over jasmine rice."
+      ],
+      "nutrition": {
+        "calories": 520,
+        "protein": 28,
+        "carbs": 35,
+        "fat": 30
+      },
+      "notes": "Can substitute tofu for a vegetarian version",
+      "createdAt": "2026-01-25T18:45:00Z"
+    },
+    {
+      "id": "rec-005",
+      "title": "Simple Caprese Salad",
+      "source": "manual",
+      "sourceUrl": null,
+      "youtubeVideoId": null,
+      "imageUrl": "https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800",
+      "servings": 2,
+      "prepTime": 10,
+      "cookTime": 0,
+      "ingredients": [
+        { "name": "fresh mozzarella", "quantity": 8, "unit": "oz", "category": "dairy" },
+        { "name": "tomatoes", "quantity": 2, "unit": "pieces", "category": "produce" },
+        { "name": "fresh basil", "quantity": 10, "unit": "leaves", "category": "produce" },
+        { "name": "extra virgin olive oil", "quantity": 2, "unit": "tbsp", "category": "pantry" },
+        { "name": "balsamic glaze", "quantity": 1, "unit": "tbsp", "category": "condiments" },
+        { "name": "flaky sea salt", "quantity": 0.25, "unit": "tsp", "category": "spices" }
+      ],
+      "instructions": [
+        "Slice mozzarella and tomatoes into 1/4 inch thick rounds.",
+        "Arrange alternating slices of tomato and mozzarella on a plate.",
+        "Tuck fresh basil leaves between the slices.",
+        "Drizzle with olive oil and balsamic glaze.",
+        "Sprinkle with flaky sea salt and freshly cracked pepper.",
+        "Serve immediately at room temperature."
+      ],
+      "nutrition": {
+        "calories": 320,
+        "protein": 18,
+        "carbs": 8,
+        "fat": 24
+      },
+      "notes": "Use the best quality ingredients you can find - this simple dish relies on them!",
+      "createdAt": "2026-01-28T12:00:00Z"
+    },
+    {
+      "id": "rec-006",
+      "title": "Korean Fried Chicken",
+      "source": "youtube",
+      "sourceUrl": "https://www.youtube.com/watch?v=ghi789",
+      "youtubeVideoId": "ghi789",
+      "imageUrl": "https://images.unsplash.com/photo-1575932444877-5106bee2a599?w=800",
+      "servings": 4,
+      "prepTime": 30,
+      "cookTime": 45,
+      "ingredients": [
+        { "name": "chicken wings", "quantity": 2, "unit": "lbs", "category": "meat" },
+        { "name": "cornstarch", "quantity": 1, "unit": "cup", "category": "pantry" },
+        { "name": "rice flour", "quantity": 0.5, "unit": "cup", "category": "pantry" },
+        { "name": "gochujang", "quantity": 3, "unit": "tbsp", "category": "condiments" },
+        { "name": "soy sauce", "quantity": 2, "unit": "tbsp", "category": "condiments" },
+        { "name": "honey", "quantity": 3, "unit": "tbsp", "category": "pantry" },
+        { "name": "garlic", "quantity": 4, "unit": "cloves", "category": "produce" },
+        { "name": "ginger", "quantity": 1, "unit": "inch", "category": "produce" },
+        { "name": "sesame seeds", "quantity": 1, "unit": "tbsp", "category": "spices" },
+        { "name": "vegetable oil", "quantity": 4, "unit": "cups", "category": "pantry" }
+      ],
+      "instructions": [
+        "Pat chicken wings completely dry with paper towels.",
+        "Mix cornstarch and rice flour in a large bowl.",
+        "Toss wings in the flour mixture until evenly coated.",
+        "Heat oil to 350°F (175°C) in a deep pot or dutch oven.",
+        "Fry wings in batches for 10 minutes until golden. Remove and drain.",
+        "Increase oil temperature to 375°F (190°C).",
+        "Fry wings again for 3-4 minutes until extra crispy.",
+        "In a small saucepan, combine gochujang, soy sauce, honey, minced garlic, and ginger.",
+        "Heat sauce until bubbling and slightly thickened.",
+        "Toss fried wings in the sauce and garnish with sesame seeds."
+      ],
+      "nutrition": {
+        "calories": 580,
+        "protein": 32,
+        "carbs": 42,
+        "fat": 28
+      },
+      "notes": "Double frying is the secret to extra crispy wings! Make sure oil is hot enough.",
+      "createdAt": "2026-01-30T20:00:00Z"
+    },
+    {
+      "id": "rec-007",
+      "title": "Mediterranean Quinoa Bowl",
+      "source": "website",
+      "sourceUrl": "https://minimalistbaker.com/mediterranean-quinoa-bowl",
+      "youtubeVideoId": null,
+      "imageUrl": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800",
+      "servings": 2,
+      "prepTime": 15,
+      "cookTime": 20,
+      "ingredients": [
+        { "name": "quinoa", "quantity": 1, "unit": "cup", "category": "pantry" },
+        { "name": "cucumber", "quantity": 1, "unit": "piece", "category": "produce" },
+        { "name": "cherry tomatoes", "quantity": 1, "unit": "cup", "category": "produce" },
+        { "name": "kalamata olives", "quantity": 0.5, "unit": "cup", "category": "produce" },
+        { "name": "feta cheese", "quantity": 0.5, "unit": "cup", "category": "dairy" },
+        { "name": "chickpeas", "quantity": 1, "unit": "can", "category": "pantry" },
+        { "name": "red onion", "quantity": 0.25, "unit": "piece", "category": "produce" },
+        { "name": "lemon", "quantity": 1, "unit": "piece", "category": "produce" },
+        { "name": "tahini", "quantity": 2, "unit": "tbsp", "category": "condiments" },
+        { "name": "fresh parsley", "quantity": 0.25, "unit": "cup", "category": "produce" }
+      ],
+      "instructions": [
+        "Rinse quinoa and cook according to package directions. Let cool slightly.",
+        "Dice cucumber and halve cherry tomatoes.",
+        "Drain and rinse chickpeas.",
+        "Thinly slice red onion.",
+        "Make dressing by whisking tahini, lemon juice, 2 tbsp water, salt, and pepper.",
+        "Divide quinoa between two bowls.",
+        "Top with cucumber, tomatoes, olives, chickpeas, onion, and feta.",
+        "Drizzle with tahini dressing.",
+        "Garnish with fresh parsley and serve."
+      ],
+      "nutrition": {
+        "calories": 445,
+        "protein": 16,
+        "carbs": 52,
+        "fat": 20
+      },
+      "notes": "Great for meal prep - keeps well in the fridge for 3-4 days without the dressing",
+      "createdAt": "2026-02-01T11:30:00Z"
+    },
+    {
+      "id": "rec-008",
+      "title": "Homemade Pizza Dough",
+      "source": "scanned",
+      "sourceUrl": null,
+      "youtubeVideoId": null,
+      "imageUrl": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800",
+      "servings": 4,
+      "prepTime": 90,
+      "cookTime": 15,
+      "ingredients": [
+        { "name": "bread flour", "quantity": 3.5, "unit": "cups", "category": "pantry" },
+        { "name": "instant yeast", "quantity": 1, "unit": "tsp", "category": "pantry" },
+        { "name": "salt", "quantity": 1.5, "unit": "tsp", "category": "spices" },
+        { "name": "warm water", "quantity": 1.25, "unit": "cups", "category": "other" },
+        { "name": "olive oil", "quantity": 2, "unit": "tbsp", "category": "pantry" },
+        { "name": "honey", "quantity": 1, "unit": "tsp", "category": "pantry" }
+      ],
+      "instructions": [
+        "Combine flour, yeast, and salt in a large bowl.",
+        "Mix warm water (105-110°F), olive oil, and honey.",
+        "Pour wet ingredients into dry and stir until a shaggy dough forms.",
+        "Knead for 8-10 minutes until smooth and elastic.",
+        "Place in an oiled bowl, cover, and let rise for 1 hour or until doubled.",
+        "Punch down dough and divide into 4 portions.",
+        "Shape each portion into a ball and let rest 15 minutes.",
+        "Stretch or roll into pizza shape.",
+        "Add toppings and bake at 500°F for 12-15 minutes."
+      ],
+      "nutrition": {
+        "calories": 280,
+        "protein": 8,
+        "carbs": 52,
+        "fat": 4
+      },
+      "notes": "From the pizza cookbook I bought in Naples. For best results, let dough cold-ferment in fridge for 24-72 hours.",
+      "createdAt": "2026-02-02T08:00:00Z",
+      "scannedFromBook": {
+        "name": "The Pizza Bible",
+        "coverImageUrl": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800"
+      }
+    }
+  ]
+}

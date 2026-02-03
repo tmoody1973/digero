@@ -1,0 +1,53 @@
+{
+  "name": "digero",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:recipes": "jest convex/__tests__/recipes.test.ts convex/__tests__/schema.test.ts convex/__tests__/physicalCookbooks.test.ts",
+    "test:manual-recipe": "jest convex/__tests__/manual-recipe-creation.test.ts",
+    "test:scanning": "jest convex/__tests__/scanning.test.ts",
+    "test:meal-planner": "jest convex/__tests__/meal-planner.test.ts"
+  },
+  "dependencies": {
+    "@clerk/clerk-expo": "^2.19.21",
+    "@react-native-async-storage/async-storage": "^2.1.0",
+    "convex": "^1.17.0",
+    "expo": "^54.0.33",
+    "expo-camera": "~16.0.0",
+    "expo-image-manipulator": "~13.0.0",
+    "expo-image-picker": "~16.0.0",
+    "expo-router": "~4.0.0",
+    "expo-secure-store": "^15.0.8",
+    "expo-status-bar": "~2.0.0",
+    "lucide-react-native": "^0.469.0",
+    "nativewind": "^4.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.0",
+    "react-native-gesture-handler": "~2.20.0",
+    "react-native-purchases": "^9.7.5",
+    "react-native-purchases-ui": "^9.7.5",
+    "react-native-reanimated": "~3.16.0",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.0.0",
+    "react-native-svg": "15.8.0",
+    "svix": "^1.84.1",
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.0",
+    "@types/react": "~18.3.0",
+    "@types/react-native": "~0.73.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  }
+}

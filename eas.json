@@ -1,0 +1,41 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "@clerk_publishable_key",
+        "EXPO_PUBLIC_CONVEX_URL": "@convex_url",
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "@revenuecat_api_key"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "REPLACE_WITH_YOUR_APPLE_ID_EMAIL",
+        "ascAppId": "REPLACE_AFTER_APP_STORE_CONNECT_SETUP",
+        "appleTeamId": "REPLACE_WITH_YOUR_TEAM_ID"
+      }
+    }
+  }
+}
