@@ -10,6 +10,7 @@
 import { v } from "convex/values";
 import { action } from "../../_generated/server";
 import { api } from "../../_generated/api";
+import { QUOTA_COSTS } from "../../youtubeQuota";
 
 /**
  * Parse ISO 8601 duration to seconds
@@ -98,6 +99,12 @@ export const fetchAndCacheChannelVideos = action({
 
       const searchData = await searchResponse.json();
 
+      // Track quota usage (search.list = 100 units)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.SEARCH,
+        operation: "search.list (cache videos)",
+      });
+
       if (!searchData.items || searchData.items.length === 0) {
         return { success: true, cached: 0 };
       }
@@ -127,6 +134,12 @@ export const fetchAndCacheChannelVideos = action({
       }
 
       const videosData = await videosResponse.json();
+
+      // Track quota usage (videos.list = 1 unit)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.VIDEOS_LIST,
+        operation: "videos.list (cache)",
+      });
 
       // Build video objects for caching
       const videos = (videosData.items || []).map(

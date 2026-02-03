@@ -9,7 +9,9 @@
 
 import { v } from "convex/values";
 import { action } from "../../_generated/server";
+import { api } from "../../_generated/api";
 import type { YouTubeChannelData } from "../../lib/youtubeTypes";
+import { QUOTA_COSTS } from "../../youtubeQuota";
 
 /**
  * YouTube API channel response
@@ -50,7 +52,7 @@ export const fetchChannelData = action({
   args: {
     channelId: v.string(),
   },
-  handler: async (_, args): Promise<{
+  handler: async (ctx, args): Promise<{
     success: boolean;
     data: YouTubeChannelData | null;
     error: { type: string; message: string } | null;
@@ -124,6 +126,12 @@ export const fetchChannelData = action({
 
       const data: YouTubeChannelResponse = await response.json();
 
+      // Track quota usage (channels.list = 1 unit)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.CHANNELS_LIST,
+        operation: "channels.list",
+      });
+
       if (!data.items || data.items.length === 0) {
         return {
           success: false,
@@ -194,7 +202,7 @@ export const searchChannels = action({
     query: v.string(),
     maxResults: v.optional(v.number()),
   },
-  handler: async (_, args): Promise<{
+  handler: async (ctx, args): Promise<{
     success: boolean;
     data: YouTubeChannelData[];
     error: { type: string; message: string } | null;
@@ -267,6 +275,12 @@ export const searchChannels = action({
 
       const searchData = await searchResponse.json();
 
+      // Track quota usage (search.list = 100 units)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.SEARCH,
+        operation: "search.list (channels)",
+      });
+
       if (!searchData.items || searchData.items.length === 0) {
         return {
           success: true,
@@ -303,6 +317,12 @@ export const searchChannels = action({
       }
 
       const channelsData: YouTubeChannelResponse = await channelsResponse.json();
+
+      // Track quota usage (channels.list = 1 unit)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.CHANNELS_LIST,
+        operation: "channels.list",
+      });
 
       const channels: YouTubeChannelData[] = (channelsData.items || []).map((channel) => ({
         channelId: channel.id,
@@ -360,7 +380,7 @@ export const getChannelVideos = action({
     channelId: v.string(),
     maxResults: v.optional(v.number()),
   },
-  handler: async (_, args): Promise<{
+  handler: async (ctx, args): Promise<{
     success: boolean;
     data: {
       videoId: string;
@@ -441,6 +461,12 @@ export const getChannelVideos = action({
 
       const searchData = await searchResponse.json();
 
+      // Track quota usage (search.list = 100 units)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.SEARCH,
+        operation: "search.list (channel videos)",
+      });
+
       if (!searchData.items || searchData.items.length === 0) {
         return {
           success: true,
@@ -469,6 +495,13 @@ export const getChannelVideos = action({
 
       if (videosResponse.ok) {
         const videosData = await videosResponse.json();
+
+        // Track quota usage (videos.list = 1 unit)
+        await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+          units: QUOTA_COSTS.VIDEOS_LIST,
+          operation: "videos.list (channel)",
+        });
+
         for (const video of videosData.items || []) {
           const durationMatch = video.contentDetails.duration.match(
             /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/
@@ -555,7 +588,7 @@ export const searchVideos = action({
     query: v.string(),
     maxResults: v.optional(v.number()),
   },
-  handler: async (_, args): Promise<{
+  handler: async (ctx, args): Promise<{
     success: boolean;
     data: {
       videoId: string;
@@ -640,6 +673,12 @@ export const searchVideos = action({
 
       const searchData = await searchResponse.json();
 
+      // Track quota usage (search.list = 100 units)
+      await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+        units: QUOTA_COSTS.SEARCH,
+        operation: "search.list (recipe videos)",
+      });
+
       if (!searchData.items || searchData.items.length === 0) {
         return {
           success: true,
@@ -674,6 +713,13 @@ export const searchVideos = action({
 
       if (videosResponse.ok) {
         const videosData = await videosResponse.json();
+
+        // Track quota usage (videos.list = 1 unit)
+        await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+          units: QUOTA_COSTS.VIDEOS_LIST,
+          operation: "videos.list (search)",
+        });
+
         for (const video of videosData.items || []) {
           const durationMatch = video.contentDetails.duration.match(
             /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/
@@ -711,6 +757,13 @@ export const searchVideos = action({
 
       if (channelsResponse.ok) {
         const channelsData = await channelsResponse.json();
+
+        // Track quota usage (channels.list = 1 unit)
+        await ctx.runMutation(api.youtubeQuota.recordQuotaUsage, {
+          units: QUOTA_COSTS.CHANNELS_LIST,
+          operation: "channels.list (avatars)",
+        });
+
         for (const channel of channelsData.items || []) {
           channelAvatars[channel.id] =
             channel.snippet.thumbnails.high?.url ||
