@@ -623,6 +623,34 @@ export default defineSchema({
     .index("by_date", ["date"]),
 
   /**
+   * AI Chat Sessions Table
+   *
+   * Stores chat session metadata for organizing conversations.
+   * Each session represents a distinct conversation topic.
+   */
+  aiChatSessions: defineTable({
+    // User relationship - Clerk user ID
+    userId: v.string(),
+
+    // Session title (auto-generated from first message or user-set)
+    title: v.string(),
+
+    // Preview text (first user message truncated)
+    preview: v.optional(v.string()),
+
+    // Number of messages in session
+    messageCount: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    // Index for fetching user's sessions
+    .index("by_user", ["userId"])
+    // Index for sorting by most recent activity
+    .index("by_user_updated", ["userId", "updatedAt"]),
+
+  /**
    * AI Chat Messages Table
    *
    * Stores conversation history for AI recipe chat feature.
@@ -632,6 +660,9 @@ export default defineSchema({
   aiChatMessages: defineTable({
     // User relationship - Clerk user ID for multi-tenancy
     userId: v.string(),
+
+    // Session relationship - links message to a chat session
+    sessionId: v.id("aiChatSessions"),
 
     // Message content
     text: v.string(),
@@ -654,8 +685,10 @@ export default defineSchema({
   })
     // Index for fetching user's chat messages
     .index("by_user", ["userId"])
-    // Index for chronological ordering within user's chat
-    .index("by_user_created", ["userId", "createdAt"])
+    // Index for fetching messages in a session
+    .index("by_session", ["sessionId"])
+    // Index for chronological ordering within session
+    .index("by_session_created", ["sessionId", "createdAt"])
     // Index for cleanup cron job (messages older than 30 days)
     .index("by_created", ["createdAt"]),
 });

@@ -23,4 +23,16 @@ crons.daily(
   internal.aiChatCleanup.cleanupOldMessages
 );
 
+/**
+ * Clean up empty chat sessions
+ *
+ * Runs daily at 3:30 AM UTC (after message cleanup).
+ * Deletes sessions that have no messages remaining.
+ */
+crons.daily(
+  "cleanup empty AI chat sessions",
+  { hourUTC: 3, minuteUTC: 30 },
+  internal.aiChatCleanup.cleanupEmptySessions
+);
+
 export default crons;

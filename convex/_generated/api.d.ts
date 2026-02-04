@@ -20,6 +20,7 @@ import type * as actions_generateSpeechmaticsJWT from "../actions/generateSpeech
 import type * as actions_processRecipeImage from "../actions/processRecipeImage.js";
 import type * as actions_sendRecipeToInstacart from "../actions/sendRecipeToInstacart.js";
 import type * as actions_sendToInstacart from "../actions/sendToInstacart.js";
+import type * as actions_uploadPlaceholderImage from "../actions/uploadPlaceholderImage.js";
 import type * as actions_youtube_addFeaturedChannel from "../actions/youtube/addFeaturedChannel.js";
 import type * as actions_youtube_cacheChannelVideos from "../actions/youtube/cacheChannelVideos.js";
 import type * as actions_youtube_extractRecipeFromYouTube from "../actions/youtube/extractRecipeFromYouTube.js";
@@ -49,6 +50,7 @@ import type * as lib_unitConversion from "../lib/unitConversion.js";
 import type * as lib_youtubeTypes from "../lib/youtubeTypes.js";
 import type * as lib_youtubeUrlParser from "../lib/youtubeUrlParser.js";
 import type * as mealPlanner from "../mealPlanner.js";
+import type * as migrations_migrateMessagesToSessions from "../migrations/migrateMessagesToSessions.js";
 import type * as physicalCookbooks from "../physicalCookbooks.js";
 import type * as recipes from "../recipes.js";
 import type * as scanSessions from "../scanSessions.js";
@@ -78,6 +80,7 @@ declare const fullApi: ApiFromModules<{
   "actions/processRecipeImage": typeof actions_processRecipeImage;
   "actions/sendRecipeToInstacart": typeof actions_sendRecipeToInstacart;
   "actions/sendToInstacart": typeof actions_sendToInstacart;
+  "actions/uploadPlaceholderImage": typeof actions_uploadPlaceholderImage;
   "actions/youtube/addFeaturedChannel": typeof actions_youtube_addFeaturedChannel;
   "actions/youtube/cacheChannelVideos": typeof actions_youtube_cacheChannelVideos;
   "actions/youtube/extractRecipeFromYouTube": typeof actions_youtube_extractRecipeFromYouTube;
@@ -107,6 +110,7 @@ declare const fullApi: ApiFromModules<{
   "lib/youtubeTypes": typeof lib_youtubeTypes;
   "lib/youtubeUrlParser": typeof lib_youtubeUrlParser;
   mealPlanner: typeof mealPlanner;
+  "migrations/migrateMessagesToSessions": typeof migrations_migrateMessagesToSessions;
   physicalCookbooks: typeof physicalCookbooks;
   recipes: typeof recipes;
   scanSessions: typeof scanSessions;
