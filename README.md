@@ -16,7 +16,8 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 - **Cookbook Organization** — Create custom collections to organize your recipes
 - **Meal Planning** — Plan your weekly meals with a drag-and-drop calendar
 - **Smart Shopping Lists** — Auto-generate shopping lists from your meal plan
-- **Cook Mode** — Hands-free step-by-step cooking guidance
+- **Cook Mode** — Hands-free step-by-step cooking guidance with voice assistant
+- **Voice Assistant** — Ask questions while cooking using Speechmatics Flow AI
 - **Dark Mode** — Full dark theme support
 
 ## Tech Stack
@@ -28,7 +29,7 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 | Backend | Convex (real-time database) |
 | Auth | Clerk (email, Apple, Google) |
 | Payments | RevenueCat |
-| AI | Google Gemini API |
+| AI | Google Gemini API, Speechmatics Flow |
 | Styling | NativeWind v4 (Tailwind CSS) |
 | Icons | lucide-react-native |
 
@@ -74,6 +75,7 @@ Create a `.env.local` file with the following:
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 key |
 | `REVENUECAT_WEBHOOK_SECRET` | RevenueCat webhook auth |
+| `SPEECHMATICS_API_KEY` | Speechmatics Flow API key |
 
 ### Development
 
@@ -148,6 +150,11 @@ Hands-free cooking experience:
 - Step-by-step navigation
 - Keep screen awake while cooking
 - Timer integration
+- **Voice Assistant** — Tap the mic button to ask questions about your recipe
+  - "What step am I on?"
+  - "How much butter do I need?"
+  - "What temperature should the oven be?"
+  - Expert cooking technique knowledge built-in
 
 ## Building for Production
 
@@ -190,6 +197,12 @@ eas build --platform android --profile production
 2. Add your iOS app with bundle ID
 3. Create products and entitlements
 4. Copy the API key to `.env.local`
+
+### Speechmatics Flow (Voice Assistant)
+
+1. Create an account at [Speechmatics Portal](https://portal.speechmatics.com/)
+2. Generate an API key
+3. Set in Convex: `npx convex env set SPEECHMATICS_API_KEY your_key`
 
 ## Contributing
 
