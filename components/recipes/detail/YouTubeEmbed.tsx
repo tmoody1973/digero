@@ -1,12 +1,13 @@
 /**
  * YouTubeEmbed Component
  *
- * Embeds a YouTube video using react-native-youtube-iframe.
+ * Shows a YouTube video thumbnail that opens the video when tapped.
  */
 
-import { useState } from "react";
-import { View, Text, ActivityIndicator, Pressable } from "react-native";
+import { useState, useCallback } from "react";
+import { View, Text, Pressable, Image } from "react-native";
 import { Play } from "lucide-react-native";
+import * as WebBrowser from "expo-web-browser";
 
 interface YouTubeEmbedProps {
   videoId: string;
@@ -14,27 +15,16 @@ interface YouTubeEmbedProps {
 }
 
 export function YouTubeEmbed({ videoId, title }: YouTubeEmbedProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
-  // For now, we'll use a simple WebView approach
-  // In production, use react-native-youtube-iframe
-  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  const thumbnailUrl = imageError
+    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
-  if (hasError) {
-    return (
-      <View className="mt-6">
-        <Text className="mb-3 text-lg font-semibold text-stone-900 dark:text-stone-100">
-          Watch the Video
-        </Text>
-        <View className="aspect-video items-center justify-center rounded-2xl bg-stone-100 dark:bg-stone-800">
-          <Text className="text-stone-500 dark:text-stone-400">
-            Unable to load video
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  const handlePress = useCallback(async () => {
+    const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    await WebBrowser.openBrowserAsync(youtubeUrl);
+  }, [videoId]);
 
   return (
     <View className="mt-6">
@@ -43,14 +33,15 @@ export function YouTubeEmbed({ videoId, title }: YouTubeEmbedProps) {
       </Text>
       <Pressable
         className="aspect-video overflow-hidden rounded-2xl bg-stone-900"
-        onPress={() => {
-          // In a full implementation, this would open the video player
-          // or expand to full-screen playback
-        }}
+        onPress={handlePress}
       >
-        {/* Thumbnail with play button overlay */}
         <View className="relative h-full w-full">
-          {/* We would use Image component with the thumbnail */}
+          <Image
+            source={{ uri: thumbnailUrl }}
+            className="h-full w-full"
+            resizeMode="cover"
+            onError={() => setImageError(true)}
+          />
           <View className="absolute inset-0 items-center justify-center bg-black/30">
             <View className="h-16 w-16 items-center justify-center rounded-full bg-red-600">
               <Play className="h-8 w-8 text-white" fill="white" />

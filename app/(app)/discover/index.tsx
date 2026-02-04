@@ -286,13 +286,13 @@ export default function DiscoverScreen() {
   // Auto-refresh videos when feed is empty but user has followed channels
   useEffect(() => {
     // Only attempt refresh if:
-    // 1. User has followed channels
+    // 1. User has followed channels loaded
     // 2. Feed is loaded but empty
     // 3. Haven't already attempted refresh
     // 4. Not currently refreshing
     if (
-      followedCount &&
-      followedCount > 0 &&
+      followedChannels &&
+      followedChannels.length > 0 &&
       videoFeed !== undefined &&
       videoFeed.videos.length === 0 &&
       !hasAttemptedRefresh &&
@@ -300,7 +300,14 @@ export default function DiscoverScreen() {
     ) {
       setIsRefreshingVideos(true);
       setHasAttemptedRefresh(true);
-      refreshVideosAction({})
+
+      // Pass channel data to the action
+      const channelsData = followedChannels.map((ch) => ({
+        youtubeChannelId: ch.youtubeChannelId,
+        name: ch.name,
+      }));
+
+      refreshVideosAction({ channels: channelsData })
         .then((result) => {
           console.log("Video refresh result:", result);
         })
@@ -311,19 +318,27 @@ export default function DiscoverScreen() {
           setIsRefreshingVideos(false);
         });
     }
-  }, [followedCount, videoFeed, hasAttemptedRefresh, isRefreshingVideos, refreshVideosAction]);
+  }, [followedChannels, videoFeed, hasAttemptedRefresh, isRefreshingVideos, refreshVideosAction]);
 
   // Handler to manually refresh videos
   const handleRefreshVideos = useCallback(async () => {
+    if (!followedChannels || followedChannels.length === 0) {
+      return;
+    }
+
     setIsRefreshingVideos(true);
     try {
-      await refreshVideosAction({});
+      const channelsData = followedChannels.map((ch) => ({
+        youtubeChannelId: ch.youtubeChannelId,
+        name: ch.name,
+      }));
+      await refreshVideosAction({ channels: channelsData });
     } catch (error) {
       console.error("Video refresh error:", error);
     } finally {
       setIsRefreshingVideos(false);
     }
-  }, [refreshVideosAction]);
+  }, [followedChannels, refreshVideosAction]);
 
   // Handlers
   const handleCategorySelect = useCallback((category: Category) => {

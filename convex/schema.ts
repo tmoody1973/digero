@@ -513,6 +513,7 @@ export default defineSchema({
     // Channel information (cached from YouTube API)
     name: v.string(),
     avatarUrl: v.string(),
+    bannerUrl: v.optional(v.string()),
     subscriberCount: v.number(),
     description: v.string(),
     videoCount: v.number(),

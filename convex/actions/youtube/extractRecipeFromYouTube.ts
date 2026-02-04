@@ -32,47 +32,64 @@ const INGREDIENT_CATEGORIES: IngredientCategory[] = [
 /**
  * Gemini extraction prompt for YouTube videos
  *
- * Optimized for video descriptions and transcripts.
+ * Prioritizes transcript (spoken content) over description for accurate extraction.
  */
-const YOUTUBE_EXTRACTION_PROMPT = `You are a recipe extraction assistant specialized in cooking videos. Analyze the following YouTube video description and optional transcript to extract recipe information.
+const YOUTUBE_EXTRACTION_PROMPT = `You are an expert recipe extraction assistant for cooking videos. Your job is to extract complete, accurate recipes from YouTube cooking videos.
 
-Return a JSON object with the following structure (use exactly these field names):
+IMPORTANT: The TRANSCRIPT contains the actual spoken recipe - ingredients and steps the chef mentions while cooking. The description is often just promotional text. PRIORITIZE the transcript content.
+
+GROUNDING INSTRUCTION: If the video doesn't mention specific quantities or measurements, USE GOOGLE SEARCH to look up similar recipes and provide reasonable estimates based on standard recipes. For example:
+- If they say "add flour" for fried cheese curds, search for "fried cheese curds recipe" to find typical flour amounts
+- If cooking times aren't mentioned, search for the dish to find standard cooking times
+- Fill in missing steps based on how similar dishes are typically prepared
+
+Extract ALL ingredients mentioned, including:
+- Main ingredients with quantities (e.g., "2 cups flour", "1 pound chicken")
+- Seasonings and spices (e.g., "salt and pepper to taste", "1 tsp paprika")
+- Oils and fats for cooking (e.g., "2 tbsp olive oil", "oil for frying")
+- Liquids (e.g., "1 cup chicken broth", "splash of wine")
+- Batter/coating ingredients (flour, eggs, breadcrumbs, etc.)
+
+For quantities - SEARCH for similar recipes if not specified:
+- If they say "a pinch" → quantity: 0.25, unit: "tsp"
+- If they say "some" or "a bit" → SEARCH for typical amount in similar recipes
+- If they say "to taste" → quantity: 1, unit: "to taste"
+- If no quantity given → SEARCH for standard recipe amounts
+
+Return a JSON object with this exact structure:
 {
-  "isRecipe": true/false,
-  "title": "Recipe title (use video title if not in description)",
+  "isRecipe": true,
+  "title": "Clean recipe title without channel name or episode info",
   "ingredients": [
-    {
-      "name": "Ingredient name",
-      "quantity": 1.5,
-      "unit": "cup",
-      "category": "one of: meat, produce, dairy, pantry, spices, condiments, bread, other"
-    }
+    {"name": "ingredient name", "quantity": 2, "unit": "cup", "category": "pantry"}
   ],
-  "instructions": ["Step 1 text", "Step 2 text"],
+  "instructions": [
+    "Step 1: Detailed instruction",
+    "Step 2: Next step"
+  ],
   "servings": 4,
   "prepTime": 15,
   "cookTime": 30,
-  "confidence": "high/medium/low",
-  "extractionNotes": "Any notes about the extraction quality or missing info"
+  "confidence": "high",
+  "extractionNotes": "Notes about extraction"
 }
 
-Categorization guidelines for ingredients:
-- meat: beef, chicken, pork, fish, seafood, bacon, sausage, turkey, lamb, etc.
-- produce: fruits, vegetables, fresh herbs (basil, parsley, cilantro)
+INGREDIENT CATEGORIES:
+- meat: beef, chicken, pork, fish, seafood, bacon, sausage, turkey, lamb, shrimp
+- produce: fruits, vegetables, fresh herbs (basil, parsley, cilantro, green onions)
 - dairy: milk, cheese, butter, cream, yogurt, eggs, sour cream
-- pantry: flour, sugar, oil, pasta, rice, canned goods, beans, broth, vinegar
-- spices: dried herbs, spices, seasoning blends, salt, pepper
-- condiments: sauces, ketchup, mustard, mayo, dressings, soy sauce
-- bread: bread, rolls, tortillas, crackers, breadcrumbs
-- other: anything that doesn't fit above
+- pantry: flour, sugar, oil, pasta, rice, canned goods, beans, broth, vinegar, cornstarch
+- spices: dried herbs, spices, seasoning blends, salt, pepper, garlic powder
+- condiments: sauces, ketchup, mustard, mayo, dressings, soy sauce, hot sauce
+- bread: bread, rolls, tortillas, crackers, breadcrumbs, buns
+- other: anything else
 
-Confidence levels:
-- "high": Clear recipe with explicit ingredients list and steps
-- "medium": Recipe mentioned but ingredients/steps need inference
-- "low": Cooking content but no clear recipe structure
+CONFIDENCE LEVELS:
+- "high": Found clear ingredients list and cooking steps in transcript
+- "medium": Found recipe but some quantities/steps inferred
+- "low": Cooking video but recipe details are vague
 
-If this is NOT a recipe video (e.g., vlog, product review, non-cooking content), return:
-{"isRecipe": false, "confidence": "high", "extractionNotes": "Not a recipe video"}
+If NOT a recipe video, return: {"isRecipe": false, "confidence": "high", "extractionNotes": "Not a recipe video"}
 
 VIDEO TITLE: `;
 
@@ -216,14 +233,18 @@ export const extractRecipeFromYouTube = action({
       };
     }
 
-    // Build the content to analyze
-    let contentToAnalyze = `${YOUTUBE_EXTRACTION_PROMPT}${videoTitle}\n\nVIDEO DESCRIPTION:\n${description}`;
+    // Build the content to analyze - PRIORITIZE TRANSCRIPT
+    let contentToAnalyze = `${YOUTUBE_EXTRACTION_PROMPT}${videoTitle}\n\n`;
 
+    // Add transcript FIRST if available (this is the primary source)
     if (captionsText && captionsText.trim().length > 0) {
-      // Limit captions to avoid token limits
-      const truncatedCaptions = captionsText.substring(0, 15000);
-      contentToAnalyze += `\n\nVIDEO TRANSCRIPT (partial):\n${truncatedCaptions}`;
+      // Limit captions to avoid token limits but keep as much as possible
+      const truncatedCaptions = captionsText.substring(0, 20000);
+      contentToAnalyze += `VIDEO TRANSCRIPT (PRIMARY SOURCE - extract recipe from this):\n${truncatedCaptions}\n\n`;
     }
+
+    // Add description as secondary/supplementary info
+    contentToAnalyze += `VIDEO DESCRIPTION (supplementary info):\n${description}`;
 
     // Create abort controller for timeout
     const controller = new AbortController();
@@ -231,7 +252,7 @@ export const extractRecipeFromYouTube = action({
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
@@ -247,8 +268,14 @@ export const extractRecipeFromYouTube = action({
                 ],
               },
             ],
+            // Enable Google Search grounding to fill in missing recipe details
+            tools: [
+              {
+                google_search: {},
+              },
+            ],
             generationConfig: {
-              temperature: 0.1,
+              temperature: 0.2,
               topP: 0.95,
               maxOutputTokens: 8192,
               responseMimeType: "application/json",

@@ -16,6 +16,7 @@ import type * as actions_fetchRecipeUrl from "../actions/fetchRecipeUrl.js";
 import type * as actions_generateCookbookCover from "../actions/generateCookbookCover.js";
 import type * as actions_generateRecipeImage from "../actions/generateRecipeImage.js";
 import type * as actions_processRecipeImage from "../actions/processRecipeImage.js";
+import type * as actions_youtube_cacheChannelVideos from "../actions/youtube/cacheChannelVideos.js";
 import type * as actions_youtube_extractRecipeFromYouTube from "../actions/youtube/extractRecipeFromYouTube.js";
 import type * as actions_youtube_fetchCaptions from "../actions/youtube/fetchCaptions.js";
 import type * as actions_youtube_fetchChannelData from "../actions/youtube/fetchChannelData.js";
@@ -44,6 +45,7 @@ import type * as seedFeaturedChannelsMutation from "../seedFeaturedChannelsMutat
 import type * as shoppingLists from "../shoppingLists.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as users from "../users.js";
+import type * as youtubeQuota from "../youtubeQuota.js";
 
 import type {
   ApiFromModules,
@@ -60,6 +62,7 @@ declare const fullApi: ApiFromModules<{
   "actions/generateCookbookCover": typeof actions_generateCookbookCover;
   "actions/generateRecipeImage": typeof actions_generateRecipeImage;
   "actions/processRecipeImage": typeof actions_processRecipeImage;
+  "actions/youtube/cacheChannelVideos": typeof actions_youtube_cacheChannelVideos;
   "actions/youtube/extractRecipeFromYouTube": typeof actions_youtube_extractRecipeFromYouTube;
   "actions/youtube/fetchCaptions": typeof actions_youtube_fetchCaptions;
   "actions/youtube/fetchChannelData": typeof actions_youtube_fetchChannelData;
@@ -88,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   shoppingLists: typeof shoppingLists;
   subscriptions: typeof subscriptions;
   users: typeof users;
+  youtubeQuota: typeof youtubeQuota;
 }>;
 
 /**

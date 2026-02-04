@@ -1,10 +1,10 @@
 "use node";
 
 /**
- * Fetch YouTube Video Captions Action
+ * Fetch YouTube Video Captions/Transcript
  *
- * Fetches caption/transcript data from YouTube videos when available.
- * Uses the YouTube Data API to list caption tracks and attempts to retrieve text.
+ * Fetches actual transcript text from YouTube videos using the innertube API.
+ * This extracts the spoken content which contains the actual recipe instructions.
  */
 
 import { v } from "convex/values";
@@ -12,41 +12,83 @@ import { action } from "../../_generated/server";
 import { isValidVideoId } from "../../lib/youtubeUrlParser";
 
 /**
- * YouTube captions list response
+ * Transcript segment from YouTube
  */
-interface YouTubeCaptionsResponse {
-  items?: {
-    id: string;
-    snippet: {
-      videoId: string;
-      lastUpdated: string;
-      trackKind: string;
-      language: string;
-      name: string;
-      audioTrackType: string;
-      isCC: boolean;
-      isLarge: boolean;
-      isEasyReader: boolean;
-      isDraft: boolean;
-      isAutoSynced: boolean;
-      status: string;
-    };
-  }[];
-  error?: {
-    code: number;
-    message: string;
-  };
+interface TranscriptSegment {
+  text: string;
+  start: number;
+  duration: number;
 }
 
 /**
- * Fetch captions for a YouTube video
+ * Extract transcript URL from YouTube page data
+ */
+function extractTranscriptUrl(html: string): string | null {
+  // Look for caption tracks in the player response
+  const patterns = [
+    /"captionTracks":\s*\[(.*?)\]/s,
+    /"playerCaptionsTracklistRenderer".*?"captionTracks":\s*\[(.*?)\]/s,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      try {
+        // Try to extract the baseUrl from caption tracks
+        const urlMatch = match[1].match(/"baseUrl":\s*"([^"]+)"/);
+        if (urlMatch && urlMatch[1]) {
+          // Unescape the URL
+          return urlMatch[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Parse transcript XML into text
+ */
+function parseTranscriptXml(xml: string): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = [];
+
+  // Match <text start="X" dur="Y">content</text> patterns
+  const textPattern = /<text[^>]*start="([\d.]+)"[^>]*dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
+
+  let match;
+  while ((match = textPattern.exec(xml)) !== null) {
+    const start = parseFloat(match[1]);
+    const duration = parseFloat(match[2]);
+    // Decode HTML entities and clean up text
+    let text = match[3]
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\n/g, " ")
+      .trim();
+
+    if (text) {
+      segments.push({ text, start, duration });
+    }
+  }
+
+  return segments;
+}
+
+/**
+ * Fetch transcript for a YouTube video
  *
- * Note: Due to YouTube API limitations, this returns caption track info.
- * The actual caption text requires OAuth authentication or alternative methods.
- * For recipe extraction, we primarily rely on video description.
+ * This fetches the actual spoken content from the video, which is essential
+ * for extracting recipes since creators speak the ingredients and instructions.
  *
  * @param videoId - YouTube video ID
- * @returns Caption text if available, or null
+ * @returns Transcript text if available
  */
 export const fetchCaptions = action({
   args: {
@@ -73,69 +115,43 @@ export const fetchCaptions = action({
       };
     }
 
-    // Get API key from environment
-    const apiKey = process.env.YOUTUBE_API_KEY;
-    if (!apiKey) {
-      console.warn("YOUTUBE_API_KEY not configured");
-      return {
-        success: false,
-        captionsText: null,
-        captionTracks: [],
-        error: {
-          type: "CONFIGURATION_ERROR",
-          message: "YouTube API is not configured",
-        },
-      };
-    }
-
     try {
-      // Build API URL for captions list
-      const url = new URL("https://www.googleapis.com/youtube/v3/captions");
-      url.searchParams.set("videoId", videoId);
-      url.searchParams.set("part", "snippet");
-      url.searchParams.set("key", apiKey);
+      // Step 1: Fetch the YouTube video page to get transcript URL
+      const videoPageUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-      // Fetch with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(url.toString(), {
+      const pageResponse = await fetch(videoPageUrl, {
         method: "GET",
         headers: {
-          Accept: "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        // 403 errors for captions are common (requires auth for download)
-        // Return success with empty captions rather than error
-        if (response.status === 403) {
-          return {
-            success: true,
-            captionsText: null,
-            captionTracks: [],
-            error: null,
-          };
-        }
-
+      if (!pageResponse.ok) {
+        console.warn(`Failed to fetch YouTube page: ${pageResponse.status}`);
         return {
-          success: false,
+          success: true, // Transcript is optional
           captionsText: null,
           captionTracks: [],
-          error: {
-            type: "FETCH_FAILED",
-            message: `Failed to fetch captions: ${response.status}`,
-          },
+          error: null,
         };
       }
 
-      const data: YouTubeCaptionsResponse = await response.json();
+      const html = await pageResponse.text();
 
-      // No captions available
-      if (!data.items || data.items.length === 0) {
+      // Step 2: Extract transcript URL from page data
+      const transcriptUrl = extractTranscriptUrl(html);
+
+      if (!transcriptUrl) {
+        console.log("No transcript URL found for video:", videoId);
         return {
           success: true,
           captionsText: null,
@@ -144,37 +160,82 @@ export const fetchCaptions = action({
         };
       }
 
-      // Map caption tracks info
-      const captionTracks = data.items.map((item) => ({
-        language: item.snippet.language,
-        name: item.snippet.name,
-        isAutoGenerated: item.snippet.trackKind === "ASR",
-      }));
+      // Step 3: Fetch the actual transcript
+      const transcriptController = new AbortController();
+      const transcriptTimeoutId = setTimeout(() => transcriptController.abort(), 30000);
 
-      // Note: Actually downloading caption text requires OAuth.
-      // For now, we return the track info and rely on video description.
-      // Future enhancement: Use a third-party service or OAuth flow.
+      const transcriptResponse = await fetch(transcriptUrl, {
+        method: "GET",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        },
+        signal: transcriptController.signal,
+      });
+
+      clearTimeout(transcriptTimeoutId);
+
+      if (!transcriptResponse.ok) {
+        console.warn(`Failed to fetch transcript: ${transcriptResponse.status}`);
+        return {
+          success: true,
+          captionsText: null,
+          captionTracks: [],
+          error: null,
+        };
+      }
+
+      const transcriptXml = await transcriptResponse.text();
+
+      // Step 4: Parse the transcript XML into text
+      const segments = parseTranscriptXml(transcriptXml);
+
+      if (segments.length === 0) {
+        console.log("No transcript segments found");
+        return {
+          success: true,
+          captionsText: null,
+          captionTracks: [],
+          error: null,
+        };
+      }
+
+      // Combine segments into readable text
+      // Group by natural pauses (segments with gaps > 2 seconds become new paragraphs)
+      let transcriptText = "";
+      let lastEnd = 0;
+
+      for (const segment of segments) {
+        const gap = segment.start - lastEnd;
+        if (gap > 2 && transcriptText.length > 0) {
+          transcriptText += "\n\n";
+        } else if (transcriptText.length > 0) {
+          transcriptText += " ";
+        }
+        transcriptText += segment.text;
+        lastEnd = segment.start + segment.duration;
+      }
+
+      console.log(`Fetched transcript with ${segments.length} segments, ${transcriptText.length} chars`);
+
       return {
         success: true,
-        captionsText: null, // Caption text download requires OAuth
-        captionTracks,
+        captionsText: transcriptText.trim(),
+        captionTracks: [{ language: "en", name: "English", isAutoGenerated: true }],
         error: null,
       };
     } catch (error) {
       // Handle timeout
       if (error instanceof Error && error.name === "AbortError") {
         return {
-          success: false,
+          success: true, // Transcript is optional
           captionsText: null,
           captionTracks: [],
-          error: {
-            type: "TIMEOUT",
-            message: "Request timed out. Please try again.",
-          },
+          error: null,
         };
       }
 
-      console.error("Error fetching captions:", error);
+      console.error("Error fetching transcript:", error);
       // Return success with no captions - captions are optional
       return {
         success: true,
@@ -187,10 +248,8 @@ export const fetchCaptions = action({
 });
 
 /**
- * Alternative: Fetch captions using a third-party transcript service
- *
- * This function attempts to get video transcript text using publicly available
- * transcript data that YouTube makes available to video pages.
+ * Alternative: Fetch transcript using YouTube's innertube API
+ * This is a more reliable method that doesn't require parsing HTML
  */
 export const fetchTranscriptText = action({
   args: {
@@ -215,20 +274,28 @@ export const fetchTranscriptText = action({
     }
 
     try {
-      // Attempt to fetch the video page and extract transcript data
-      // This is a best-effort approach and may not always work
-      const videoPageUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      // Use YouTube's innertube API to get transcript
+      const innertubeUrl = "https://www.youtube.com/youtubei/v1/get_transcript";
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(videoPageUrl, {
-        method: "GET",
+      const response = await fetch(innertubeUrl, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          Accept: "text/html",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
         },
+        body: JSON.stringify({
+          context: {
+            client: {
+              clientName: "WEB",
+              clientVersion: "2.20240101.00.00",
+            },
+          },
+          params: Buffer.from(`\n\x0b${videoId}`).toString("base64"),
+        }),
         signal: controller.signal,
       });
 
@@ -242,14 +309,17 @@ export const fetchTranscriptText = action({
         };
       }
 
-      const html = await response.text();
+      const data = await response.json();
 
-      // Try to find transcript/caption data in the page
-      // YouTube embeds some caption data in the initial page load
-      const captionTrackPattern = /"captionTracks":\s*(\[.*?\])/;
-      const match = html.match(captionTrackPattern);
+      // Extract transcript text from response
+      const transcriptRenderer =
+        data?.actions?.[0]?.updateEngagementPanelAction?.content?.transcriptRenderer;
+      const cueGroups =
+        transcriptRenderer?.content?.transcriptSearchPanelRenderer?.body?.transcriptSegmentListRenderer?.initialSegments ||
+        transcriptRenderer?.body?.transcriptSegmentListRenderer?.initialSegments ||
+        [];
 
-      if (!match) {
+      if (cueGroups.length === 0) {
         return {
           success: true,
           transcriptText: null,
@@ -257,16 +327,26 @@ export const fetchTranscriptText = action({
         };
       }
 
-      // For now, return null as full transcript parsing is complex
-      // The video description is typically sufficient for recipe extraction
+      // Extract text from cue groups
+      const textParts: string[] = [];
+      for (const cue of cueGroups) {
+        const text =
+          cue?.transcriptSegmentRenderer?.snippet?.runs?.[0]?.text ||
+          cue?.transcriptSectionHeaderRenderer?.sectionHeader?.runs?.[0]?.text;
+        if (text) {
+          textParts.push(text);
+        }
+      }
+
+      const transcriptText = textParts.join(" ").trim();
+
       return {
         success: true,
-        transcriptText: null,
+        transcriptText: transcriptText || null,
         error: null,
       };
     } catch (error) {
-      // Transcript fetch is optional, don't fail
-      console.warn("Could not fetch transcript:", error);
+      console.warn("Could not fetch transcript via innertube:", error);
       return {
         success: true,
         transcriptText: null,

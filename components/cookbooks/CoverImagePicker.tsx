@@ -8,9 +8,11 @@
  */
 
 import { useState } from "react";
-import { View, Text, Pressable, Image, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, Pressable, Image, ActivityIndicator, ScrollView, Alert } from "react-native";
 import { ImagePlus, Upload, Sparkles, Check } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 type TabOption = "auto" | "upload" | "ai";
 
@@ -34,6 +36,8 @@ export function CoverImagePicker({
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
+  const generateCover = useAction(api.actions.generateCookbookCover.generateCookbookCover);
+
   const handleUpload = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -56,16 +60,20 @@ export function CoverImagePicker({
     setIsGenerating(true);
 
     try {
-      // TODO: Implement actual Gemini API call
-      // For now, use a placeholder
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const result = await generateCover({
+        name: cookbookName,
+        description: cookbookDescription || undefined,
+      });
 
-      // Placeholder image based on cookbook name
-      const placeholderUrl = `https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=600&q=80`;
-      setGeneratedUrl(placeholderUrl);
-      onSelectImage(placeholderUrl);
+      if (result.success && result.imageUrl) {
+        setGeneratedUrl(result.imageUrl);
+        onSelectImage(result.imageUrl);
+      } else {
+        Alert.alert("Error", result.error || "Failed to generate image");
+      }
     } catch (error) {
       console.error("Failed to generate AI image:", error);
+      Alert.alert("Error", "Failed to generate image. Please try again.");
     } finally {
       setIsGenerating(false);
     }

@@ -8,6 +8,7 @@
 import { Redirect, Stack } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
 import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { View, ActivityIndicator, Text } from "react-native";
 import { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import { useShareIntentHandler } from "@/hooks/useShareIntent";
 
 export default function AppLayout() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { isAuthenticated: isConvexAuthenticated, isLoading: isConvexLoading } = useConvexAuth();
   const currentUser = useQuery(api.users.getCurrentUser);
   const ensureUserExists = useMutation(api.users.ensureUserExists);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
@@ -24,11 +26,12 @@ export default function AppLayout() {
   useShareIntentHandler();
 
   // Debug logging
-  console.log("[AppLayout] isLoaded:", isLoaded, "isSignedIn:", isSignedIn, "currentUser:", currentUser);
+  console.log("[AppLayout] isLoaded:", isLoaded, "isSignedIn:", isSignedIn, "isConvexAuthenticated:", isConvexAuthenticated, "currentUser:", currentUser);
 
   // Auto-create user if they don't exist
+  // Important: Wait for Convex auth to be ready before calling ensureUserExists
   useEffect(() => {
-    if (currentUser === null && isSignedIn && !isCreatingUser) {
+    if (currentUser === null && isSignedIn && isConvexAuthenticated && !isCreatingUser && !isConvexLoading) {
       console.log("[AppLayout] User not found, creating...");
       setIsCreatingUser(true);
       ensureUserExists()
@@ -42,10 +45,10 @@ export default function AppLayout() {
           setIsCreatingUser(false);
         });
     }
-  }, [currentUser, isSignedIn, isCreatingUser, ensureUserExists]);
+  }, [currentUser, isSignedIn, isConvexAuthenticated, isConvexLoading, isCreatingUser, ensureUserExists]);
 
   // Show loading state while checking auth status
-  if (!isLoaded) {
+  if (!isLoaded || isConvexLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-stone-50 dark:bg-stone-950">
         <ActivityIndicator size="large" color="#f97316" />

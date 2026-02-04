@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Share2,
   Pencil,
+  Plus,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -32,9 +33,11 @@ import {
   ViewModeToggle,
   SortSelector,
   EditCookbookModal,
+  AddRecipesToCookbookModal,
   type ViewMode,
 } from "@/components/cookbooks";
 import type { SortOption } from "@/components/cookbooks/SortSelector";
+import { TabBar } from "@/components/navigation";
 
 export default function CookbookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,6 +54,7 @@ export default function CookbookDetailScreen() {
 
   // Modal state
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddRecipesModal, setShowAddRecipesModal] = useState(false);
 
   // Fetch cookbook with recipes
   const cookbookId = id as Id<"cookbooks">;
@@ -158,6 +162,10 @@ export default function CookbookDetailScreen() {
   const handleShare = useCallback(() => {
     // TODO: Implement share functionality
     console.log("Share cookbook");
+  }, []);
+
+  const handleAddRecipes = useCallback(() => {
+    setShowAddRecipesModal(true);
   }, []);
 
   // Render recipe card
@@ -343,10 +351,11 @@ export default function CookbookDetailScreen() {
 
       {/* Recipes */}
       {recipes.length === 0 ? (
-        <View className="px-4 py-6">
+        <View className="flex-1 px-4 py-6">
           <CookbookEmptyState
             isBuiltIn={cookbook.isBuiltIn}
             cookbookName={cookbook.name}
+            onAddRecipes={handleAddRecipes}
           />
         </View>
       ) : (
@@ -369,11 +378,33 @@ export default function CookbookDetailScreen() {
         />
       )}
 
+      {/* Floating Add Button (for non-built-in cookbooks) */}
+      {!cookbook.isBuiltIn && (
+        <Pressable
+          onPress={handleAddRecipes}
+          className="absolute bottom-24 right-6 h-14 w-14 items-center justify-center rounded-full bg-orange-500 shadow-lg active:bg-orange-600"
+        >
+          <Plus className="h-6 w-6 text-white" />
+        </Pressable>
+      )}
+
+      {/* Bottom Tab Bar */}
+      <TabBar />
+
       {/* Edit Modal */}
       <EditCookbookModal
         isOpen={showEditModal}
         cookbookId={cookbookId}
         onClose={() => setShowEditModal(false)}
+      />
+
+      {/* Add Recipes Modal */}
+      <AddRecipesToCookbookModal
+        isOpen={showAddRecipesModal}
+        cookbookId={cookbookId}
+        existingRecipeIds={recipes.map((r) => r.recipeId)}
+        onClose={() => setShowAddRecipesModal(false)}
+        onSuccess={() => setShowAddRecipesModal(false)}
       />
     </View>
   );

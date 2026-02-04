@@ -13,5 +13,6 @@ export { SortSelector } from "./SortSelector";
 export { CreateCookbookModal } from "./CreateCookbookModal";
 export { EditCookbookModal } from "./EditCookbookModal";
 export { AddToCookbookModal } from "./AddToCookbookModal";
+export { AddRecipesToCookbookModal } from "./AddRecipesToCookbookModal";
 export { CoverImagePicker } from "./CoverImagePicker";
 export { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";

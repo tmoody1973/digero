@@ -47,11 +47,13 @@ export function EmptyState({ onCreateCookbook }: EmptyStateProps) {
 interface CookbookEmptyStateProps {
   isBuiltIn: boolean;
   cookbookName?: string;
+  onAddRecipes?: () => void;
 }
 
 export function CookbookEmptyState({
   isBuiltIn,
   cookbookName,
+  onAddRecipes,
 }: CookbookEmptyStateProps) {
   const getMessage = () => {
     if (isBuiltIn && cookbookName === "Favorites") {
@@ -73,9 +75,19 @@ export function CookbookEmptyState({
         No recipes yet
       </Text>
 
-      <Text className="px-8 text-center text-stone-500 dark:text-stone-400">
+      <Text className="mb-4 px-8 text-center text-stone-500 dark:text-stone-400">
         {getMessage()}
       </Text>
+
+      {!isBuiltIn && onAddRecipes && (
+        <Pressable
+          onPress={onAddRecipes}
+          className="flex-row items-center gap-2 rounded-lg bg-orange-500 px-6 py-2 active:bg-orange-600"
+        >
+          <Plus className="h-5 w-5 text-white" />
+          <Text className="font-semibold text-white">Add Recipes</Text>
+        </Pressable>
+      )}
     </View>
   );
 }

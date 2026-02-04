@@ -5,7 +5,7 @@
  * Extracts recipe data from video captions/description using AI.
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,8 +16,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,35 +28,63 @@ import {
   Link,
   Sparkles,
   AlertCircle,
+  Clock,
+  Users,
 } from "lucide-react-native";
 
 import { parseYouTubeUrl } from "@/convex/lib/youtubeUrlParser";
 
 type ImportStep = "url" | "extracting" | "preview";
 
+interface ParsedIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  category: "meat" | "produce" | "dairy" | "pantry" | "spices" | "condiments" | "bread" | "other";
+}
+
 interface RecipePreview {
   title: string;
-  ingredients: string[];
+  ingredients: ParsedIngredient[];
   instructions: string[];
-  servings?: number;
-  prepTime?: number;
-  cookTime?: number;
+  servings: number;
+  prepTime: number;
+  cookTime: number;
   videoId: string;
   thumbnailUrl: string;
   channelName: string;
+  description: string;
 }
 
 export default function YouTubeImportScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ url?: string; videoId?: string }>();
 
   const [url, setUrl] = useState("");
   const [step, setStep] = useState<ImportStep>("url");
   const [preview, setPreview] = useState<RecipePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasAutoExtracted, setHasAutoExtracted] = useState(false);
 
+  // Convex actions
+  const fetchVideoMetadata = useAction(api.actions.youtube.fetchVideoMetadata.fetchVideoMetadata);
+  const fetchCaptions = useAction(api.actions.youtube.fetchCaptions.fetchCaptions);
   const extractRecipe = useAction(api.actions.youtube.extractRecipeFromYouTube.extractRecipeFromYouTube);
   const saveFromYouTube = useMutation(api.recipes.saveFromYouTube);
+
+  // Handle URL shared from other apps
+  useEffect(() => {
+    if (params.url && !hasAutoExtracted) {
+      setUrl(params.url);
+      setHasAutoExtracted(true);
+      // Auto-extract after a short delay to allow UI to render
+      setTimeout(() => {
+        // Will trigger extraction on next render when url state is set
+      }, 100);
+    }
+  }, [params.url, hasAutoExtracted]);
 
   const handleExtract = useCallback(async () => {
     setError(null);
@@ -71,24 +100,62 @@ export default function YouTubeImportScreen() {
     setStep("extracting");
 
     try {
-      const result = await extractRecipe({ videoId: parsed.videoId });
+      // Step 1: Fetch video metadata
+      const metadataResult = await fetchVideoMetadata({ videoId: parsed.videoId });
 
-      if (!result.success || !result.data) {
-        setError(result.error?.message || "Failed to extract recipe from video");
+      if (!metadataResult.success || !metadataResult.data) {
+        setError(metadataResult.error?.message || "Failed to fetch video data");
         setStep("url");
+        setIsExtracting(false);
         return;
       }
 
+      const metadata = metadataResult.data;
+
+      // Step 2: Try to fetch captions (optional)
+      let captionsText: string | undefined;
+      try {
+        const captionsResult = await fetchCaptions({ videoId: parsed.videoId });
+        if (captionsResult.success && captionsResult.captionsText) {
+          captionsText = captionsResult.captionsText;
+        }
+      } catch {
+        // Captions are optional, continue without them
+      }
+
+      // Step 3: Extract recipe using Gemini
+      const extractionResult = await extractRecipe({
+        videoTitle: metadata.title,
+        description: metadata.description,
+        captionsText,
+      });
+
+      if (!extractionResult.success) {
+        setError(extractionResult.error?.message || "Failed to extract recipe");
+        setStep("url");
+        setIsExtracting(false);
+        return;
+      }
+
+      if (!extractionResult.isRecipe || !extractionResult.recipe) {
+        setError("This video doesn't appear to contain a recipe. Try a cooking video with ingredients listed.");
+        setStep("url");
+        setIsExtracting(false);
+        return;
+      }
+
+      // Build preview with proper ingredient format
       setPreview({
-        title: result.data.title,
-        ingredients: result.data.ingredients,
-        instructions: result.data.instructions,
-        servings: result.data.servings,
-        prepTime: result.data.prepTime,
-        cookTime: result.data.cookTime,
+        title: extractionResult.recipe.title,
+        ingredients: extractionResult.recipe.ingredients as ParsedIngredient[],
+        instructions: extractionResult.recipe.instructions,
+        servings: extractionResult.recipe.servings || 4,
+        prepTime: extractionResult.recipe.prepTime || 0,
+        cookTime: extractionResult.recipe.cookTime || 0,
         videoId: parsed.videoId,
-        thumbnailUrl: result.data.thumbnailUrl || `https://img.youtube.com/vi/${parsed.videoId}/maxresdefault.jpg`,
-        channelName: result.data.channelName || "Unknown Channel",
+        thumbnailUrl: metadata.thumbnailUrl || `https://img.youtube.com/vi/${parsed.videoId}/maxresdefault.jpg`,
+        channelName: metadata.channelTitle || "Unknown Channel",
+        description: metadata.description,
       });
       setStep("preview");
     } catch (err) {
@@ -98,11 +165,12 @@ export default function YouTubeImportScreen() {
     } finally {
       setIsExtracting(false);
     }
-  }, [url, extractRecipe]);
+  }, [url, fetchVideoMetadata, fetchCaptions, extractRecipe]);
 
   const handleSave = useCallback(async () => {
-    if (!preview) return;
+    if (!preview || isSaving) return;
 
+    setIsSaving(true);
     try {
       const recipeId = await saveFromYouTube({
         title: preview.title,
@@ -114,14 +182,16 @@ export default function YouTubeImportScreen() {
         youtubeVideoId: preview.videoId,
         sourceUrl: `https://www.youtube.com/watch?v=${preview.videoId}`,
         imageUrl: preview.thumbnailUrl,
+        notes: preview.description.substring(0, 500), // Store description as notes
       });
 
       router.replace(`/(app)/recipes/${recipeId}`);
     } catch (err) {
       console.error("Save error:", err);
       Alert.alert("Error", "Failed to save recipe. Please try again.");
+      setIsSaving(false);
     }
-  }, [preview, saveFromYouTube, router]);
+  }, [preview, isSaving, saveFromYouTube, router]);
 
   const handleBack = useCallback(() => {
     if (step === "preview") {
@@ -131,6 +201,13 @@ export default function YouTubeImportScreen() {
       router.back();
     }
   }, [step, router]);
+
+  // Format ingredient for display
+  const formatIngredient = (ing: ParsedIngredient): string => {
+    const qty = ing.quantity !== 1 ? `${ing.quantity} ` : "";
+    const unit = ing.unit && ing.unit !== "item" ? `${ing.unit} ` : "";
+    return `${qty}${unit}${ing.name}`.trim();
+  };
 
   // URL Input Step
   if (step === "url" || step === "extracting") {
@@ -245,66 +322,81 @@ export default function YouTubeImportScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 p-4">
+      <ScrollView className="flex-1">
         {preview && (
           <>
-            {/* Title */}
-            <Text className="text-xl font-bold text-stone-900 dark:text-white mb-4">
-              {preview.title}
-            </Text>
-
-            {/* Meta */}
-            <View className="flex-row gap-4 mb-6">
-              {preview.servings && (
-                <Text className="text-sm text-stone-500 dark:text-stone-400">
-                  {preview.servings} servings
-                </Text>
-              )}
-              {preview.prepTime && (
-                <Text className="text-sm text-stone-500 dark:text-stone-400">
-                  Prep: {preview.prepTime} min
-                </Text>
-              )}
-              {preview.cookTime && (
-                <Text className="text-sm text-stone-500 dark:text-stone-400">
-                  Cook: {preview.cookTime} min
-                </Text>
-              )}
-            </View>
-
-            {/* Ingredients */}
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-stone-900 dark:text-white mb-3">
-                Ingredients ({preview.ingredients.length})
-              </Text>
-              <View className="bg-white dark:bg-stone-800 rounded-xl p-4">
-                {preview.ingredients.map((ing, i) => (
-                  <Text
-                    key={i}
-                    className="text-stone-700 dark:text-stone-300 py-1"
-                  >
-                    • {ing}
-                  </Text>
-                ))}
+            {/* Video Thumbnail */}
+            <View className="relative aspect-video">
+              <Image
+                source={{ uri: preview.thumbnailUrl }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+              <View className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded">
+                <Text className="text-white text-xs">{preview.channelName}</Text>
               </View>
             </View>
 
-            {/* Instructions */}
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-stone-900 dark:text-white mb-3">
-                Instructions ({preview.instructions.length} steps)
+            <View className="p-4">
+              {/* Title */}
+              <Text className="text-xl font-bold text-stone-900 dark:text-white mb-3">
+                {preview.title}
               </Text>
-              <View className="bg-white dark:bg-stone-800 rounded-xl p-4">
-                {preview.instructions.map((inst, i) => (
-                  <View key={i} className="flex-row mb-3">
-                    <Text className="text-orange-500 font-semibold mr-3">
-                      {i + 1}.
-                    </Text>
-                    <Text className="flex-1 text-stone-700 dark:text-stone-300">
-                      {inst}
+
+              {/* Meta */}
+              <View className="flex-row gap-4 mb-6">
+                {preview.servings > 0 && (
+                  <View className="flex-row items-center gap-1">
+                    <Users size={16} color="#78716c" />
+                    <Text className="text-sm text-stone-500 dark:text-stone-400">
+                      {preview.servings} servings
                     </Text>
                   </View>
-                ))}
+                )}
+                {(preview.prepTime > 0 || preview.cookTime > 0) && (
+                  <View className="flex-row items-center gap-1">
+                    <Clock size={16} color="#78716c" />
+                    <Text className="text-sm text-stone-500 dark:text-stone-400">
+                      {preview.prepTime + preview.cookTime} min total
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Ingredients */}
+              <View className="mb-6">
+                <Text className="text-lg font-semibold text-stone-900 dark:text-white mb-3">
+                  Ingredients ({preview.ingredients.length})
+                </Text>
+                <View className="bg-white dark:bg-stone-800 rounded-xl p-4">
+                  {preview.ingredients.map((ing, i) => (
+                    <Text
+                      key={i}
+                      className="text-stone-700 dark:text-stone-300 py-1"
+                    >
+                      • {formatIngredient(ing)}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+
+              {/* Instructions */}
+              <View className="mb-6">
+                <Text className="text-lg font-semibold text-stone-900 dark:text-white mb-3">
+                  Instructions ({preview.instructions.length} steps)
+                </Text>
+                <View className="bg-white dark:bg-stone-800 rounded-xl p-4">
+                  {preview.instructions.map((inst, i) => (
+                    <View key={i} className="flex-row mb-3">
+                      <Text className="text-orange-500 font-semibold mr-3">
+                        {i + 1}.
+                      </Text>
+                      <Text className="flex-1 text-stone-700 dark:text-stone-300">
+                        {inst}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
           </>
@@ -315,9 +407,19 @@ export default function YouTubeImportScreen() {
       <View className="p-4 border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900">
         <Pressable
           onPress={handleSave}
-          className="py-4 bg-orange-500 rounded-xl items-center active:bg-orange-600"
+          disabled={isSaving}
+          className={`py-4 rounded-xl items-center ${
+            isSaving ? "bg-stone-400" : "bg-orange-500 active:bg-orange-600"
+          }`}
         >
-          <Text className="text-white font-semibold">Save Recipe</Text>
+          {isSaving ? (
+            <View className="flex-row items-center gap-2">
+              <ActivityIndicator size="small" color="#fff" />
+              <Text className="text-white font-semibold">Saving...</Text>
+            </View>
+          ) : (
+            <Text className="text-white font-semibold">Save Recipe</Text>
+          )}
         </Pressable>
       </View>
     </SafeAreaView>

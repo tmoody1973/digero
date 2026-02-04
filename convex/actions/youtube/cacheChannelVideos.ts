@@ -198,22 +198,27 @@ export const fetchAndCacheChannelVideos = action({
 });
 
 /**
- * Refresh videos for all followed channels
+ * Refresh videos for followed channels
  *
  * Call this to populate or refresh the video feed cache.
+ * Accepts YouTube channel IDs from the client to avoid auth issues in actions.
  */
 export const refreshFollowedChannelVideos = action({
-  args: {},
-  handler: async (ctx): Promise<{
+  args: {
+    channels: v.array(
+      v.object({
+        youtubeChannelId: v.string(),
+        name: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args): Promise<{
     success: boolean;
     channelsProcessed: number;
     totalCached: number;
     errors: string[];
   }> => {
-    // Get followed channels from the query
-    const followedChannels = await ctx.runQuery(api.channels.getFollowedChannels);
-
-    if (!followedChannels || followedChannels.length === 0) {
+    if (!args.channels || args.channels.length === 0) {
       return {
         success: true,
         channelsProcessed: 0,
@@ -226,7 +231,7 @@ export const refreshFollowedChannelVideos = action({
     let totalCached = 0;
 
     // Fetch videos for each followed channel
-    for (const channel of followedChannels) {
+    for (const channel of args.channels) {
       const result = await ctx.runAction(
         api.actions.youtube.cacheChannelVideos.fetchAndCacheChannelVideos,
         {
@@ -244,7 +249,7 @@ export const refreshFollowedChannelVideos = action({
 
     return {
       success: errors.length === 0,
-      channelsProcessed: followedChannels.length,
+      channelsProcessed: args.channels.length,
       totalCached,
       errors,
     };

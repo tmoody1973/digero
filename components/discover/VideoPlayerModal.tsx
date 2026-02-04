@@ -2,11 +2,7 @@
  * Video Player Modal
  *
  * Modal component for in-app YouTube video playback.
- * Uses react-native-youtube-iframe for embedded playback when available.
- * Falls back to a placeholder with "Watch on YouTube" option.
- *
- * To enable full video playback, install:
- * npx expo install react-native-youtube-iframe react-native-webview
+ * Uses react-native-youtube-iframe for embedded playback.
  */
 
 import React, { useState, useCallback, useRef } from "react";
@@ -20,15 +16,7 @@ import {
 } from "react-native";
 import { X, Bookmark, ExternalLink, Play, Pause } from "lucide-react-native";
 import * as Linking from "expo-linking";
-
-// Conditionally import YoutubePlayer if available
-let YoutubePlayer: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  YoutubePlayer = require("react-native-youtube-iframe").default;
-} catch {
-  // react-native-youtube-iframe not installed
-}
+import YoutubePlayer from "react-native-youtube-iframe";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PLAYER_WIDTH = SCREEN_WIDTH;
@@ -47,7 +35,6 @@ interface VideoPlayerModalProps {
  *
  * Displays a YouTube video in a modal with save recipe option.
  * Uses react-native-youtube-iframe for embedded playback.
- * Falls back to opening YouTube app/browser if iframe is not available.
  */
 export function VideoPlayerModal({
   visible,
@@ -72,6 +59,7 @@ export function VideoPlayerModal({
 
   const handleClose = useCallback(() => {
     setIsPlaying(false);
+    setIsReady(false);
     onClose();
   }, [onClose]);
 
@@ -88,61 +76,6 @@ export function VideoPlayerModal({
   const togglePlaying = useCallback(() => {
     setIsPlaying((prev) => !prev);
   }, []);
-
-  // YouTube Player Placeholder (fallback)
-  const YouTubePlayerPlaceholder = () => (
-    <View
-      style={{ width: PLAYER_WIDTH, height: PLAYER_HEIGHT }}
-      className="bg-black items-center justify-center"
-    >
-      <View className="items-center">
-        <View className="w-20 h-20 bg-red-600 rounded-full items-center justify-center mb-4">
-          <View className="w-0 h-0 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-l-[20px] border-l-white ml-1" />
-        </View>
-        <Text className="text-white font-semibold text-lg mb-2">
-          YouTube Video
-        </Text>
-        <Text className="text-stone-400 text-sm text-center px-8 mb-4">
-          Install react-native-youtube-iframe for in-app playback
-        </Text>
-        <Pressable
-          onPress={handleOpenInYouTube}
-          className="flex-row items-center gap-2 bg-red-600 px-6 py-3 rounded-lg active:bg-red-700"
-        >
-          <ExternalLink size={18} color="#fff" />
-          <Text className="text-white font-semibold">Watch on YouTube</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-
-  // YouTube iframe player (when available)
-  const YouTubeIframePlayer = () => {
-    if (!YoutubePlayer) {
-      return <YouTubePlayerPlaceholder />;
-    }
-
-    return (
-      <View style={{ width: PLAYER_WIDTH, height: PLAYER_HEIGHT }}>
-        <YoutubePlayer
-          ref={playerRef}
-          height={PLAYER_HEIGHT}
-          width={PLAYER_WIDTH}
-          videoId={videoId}
-          play={isPlaying}
-          onChangeState={onStateChange}
-          onReady={handleReady}
-          webViewProps={{
-            allowsFullscreenVideo: true,
-            androidLayerType:
-              Platform.OS === "android" && Platform.Version <= 22
-                ? "hardware"
-                : "none",
-          }}
-        />
-      </View>
-    );
-  };
 
   return (
     <Modal
@@ -171,11 +104,26 @@ export function VideoPlayerModal({
 
         {/* Video Player */}
         <View className="bg-black">
-          {YoutubePlayer ? <YouTubeIframePlayer /> : <YouTubePlayerPlaceholder />}
+          <YoutubePlayer
+            ref={playerRef}
+            height={PLAYER_HEIGHT}
+            width={PLAYER_WIDTH}
+            videoId={videoId}
+            play={isPlaying}
+            onChangeState={onStateChange}
+            onReady={handleReady}
+            webViewProps={{
+              allowsFullscreenVideo: true,
+              androidLayerType:
+                Platform.OS === "android" && Platform.Version <= 22
+                  ? "hardware"
+                  : "none",
+            }}
+          />
         </View>
 
-        {/* Play/Pause Button (only when iframe is available) */}
-        {YoutubePlayer && isReady && (
+        {/* Play/Pause Button */}
+        {isReady && (
           <Pressable
             onPress={togglePlaying}
             className="flex-row items-center justify-center gap-2 mx-4 mt-4 py-2 bg-stone-800 rounded-lg active:bg-stone-700"

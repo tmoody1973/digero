@@ -46,22 +46,27 @@ Main ingredients include: ${ingredientsList}.
 Style: Professional food photography, warm lighting, shallow depth of field,
 appetizing presentation on a clean plate, top-down or 45-degree angle view.`;
 
-      // Call Gemini API for image generation
-      // Note: Using Gemini's Imagen model for image generation
+      // Call Gemini API for image generation using gemini-3-pro-image-preview
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generate?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            instances: [{ prompt }],
-            parameters: {
-              sampleCount: 1,
-              aspectRatio: "16:9",
-              safetyFilterLevel: "block_few",
-              personGeneration: "allow_adult",
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              responseModalities: ["IMAGE", "TEXT"],
+              responseMimeType: "text/plain",
             },
           }),
         }
@@ -75,19 +80,25 @@ appetizing presentation on a clean plate, top-down or 45-degree angle view.`;
 
       const data = await response.json();
 
-      // Extract the generated image data
-      const imageData = data.predictions?.[0]?.bytesBase64Encoded;
+      // Extract the generated image data from Gemini response
+      const imagePart = data.candidates?.[0]?.content?.parts?.find(
+        (part: { inlineData?: { mimeType: string; data: string } }) => part.inlineData?.mimeType?.startsWith("image/")
+      );
+      const imageData = imagePart?.inlineData?.data;
 
       if (!imageData) {
         console.warn("No image data received from Gemini");
         return null;
       }
 
+      // Get the MIME type from the response
+      const mimeType = imagePart?.inlineData?.mimeType || "image/png";
+
       // Convert base64 to blob
       const binaryData = Uint8Array.from(atob(imageData), (c) =>
         c.charCodeAt(0)
       );
-      const blob = new Blob([binaryData], { type: "image/png" });
+      const blob = new Blob([binaryData], { type: mimeType });
 
       // Store the image in Convex file storage
       const storageId = await ctx.storage.store(blob);
