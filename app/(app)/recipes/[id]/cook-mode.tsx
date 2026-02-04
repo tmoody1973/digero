@@ -3,9 +3,10 @@
  *
  * Full-screen step-by-step cooking view with large text and timers.
  * Screen stays awake while in this mode.
+ * Includes Speechmatics Flow voice assistant for hands-free cooking help.
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -27,6 +28,9 @@ import {
   TimerButton,
   getPrimaryTime,
 } from "@/components/recipes/cook-mode";
+import { SpeechmaticsFlowProvider } from "@/components/voice/SpeechmaticsFlowProvider";
+import { SpeechmaticsVoiceButton } from "@/components/voice/SpeechmaticsVoiceButton";
+import type { VoiceAssistantRecipe } from "@/hooks/voice/useSpeechmaticsFlow";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -128,6 +132,19 @@ export default function CookModeScreen() {
     );
   }
 
+  // Build voice assistant recipe data
+  const voiceRecipe: VoiceAssistantRecipe = {
+    id: recipe._id,
+    title: recipe.title,
+    ingredients: recipe.ingredients.map((ing) =>
+      typeof ing === "string"
+        ? ing
+        : { name: ing.name, quantity: ing.quantity, unit: ing.unit }
+    ),
+    instructions: recipe.instructions,
+    servings: recipe.servings,
+  };
+
   const renderStep = ({
     item,
     index,
@@ -159,114 +176,122 @@ export default function CookModeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-stone-900">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-12 pb-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-stone-800 active:bg-stone-700"
-        >
-          <X className="h-5 w-5 text-white" />
-        </Pressable>
+    <SpeechmaticsFlowProvider>
+      <View className="flex-1 bg-stone-900">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-4 pt-12 pb-4">
+          <Pressable
+            onPress={() => router.back()}
+            className="h-10 w-10 items-center justify-center rounded-full bg-stone-800 active:bg-stone-700"
+          >
+            <X className="h-5 w-5 text-white" />
+          </Pressable>
 
-        <Text className="text-lg font-semibold text-white">
-          Step {currentStep + 1} of {totalSteps}
-        </Text>
+          <Text className="text-lg font-semibold text-white">
+            Step {currentStep + 1} of {totalSteps}
+          </Text>
 
-        <View className="w-10" />
-      </View>
-
-      {/* Progress Bar */}
-      <StepProgressBar currentStep={currentStep} totalSteps={totalSteps} />
-
-      {/* Recipe Title */}
-      <View className="px-4 py-4">
-        <Text className="text-center text-base text-stone-400" numberOfLines={1}>
-          {recipe.title}
-        </Text>
-      </View>
-
-      {/* Steps Pager */}
-      <FlatList
-        ref={flatListRef}
-        data={recipe.instructions}
-        renderItem={renderStep}
-        keyExtractor={(_, index) => `step-${index}`}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        initialScrollIndex={0}
-        getItemLayout={(_, index) => ({
-          length: SCREEN_WIDTH,
-          offset: SCREEN_WIDTH * index,
-          index,
-        })}
-        className="flex-1"
-      />
-
-      {/* Active Timer Overlay */}
-      {activeTimer !== null && (
-        <View className="absolute bottom-32 left-0 right-0 px-4">
-          <CountdownTimer
-            initialSeconds={activeTimer}
-            onComplete={handleTimerComplete}
-            onDismiss={handleDismissTimer}
-            onTick={handleTimerTick}
-          />
+          <View className="w-10" />
         </View>
-      )}
 
-      {/* Navigation Buttons */}
-      <View className="flex-row items-center justify-between px-4 pb-8 pt-4">
-        <Pressable
-          onPress={goToPrevious}
-          disabled={currentStep === 0}
-          className={`h-14 w-14 items-center justify-center rounded-full ${
-            currentStep === 0
-              ? "bg-stone-800/50"
-              : "bg-stone-800 active:bg-stone-700"
-          }`}
-        >
-          <ChevronLeft
-            className={`h-6 w-6 ${
-              currentStep === 0 ? "text-stone-600" : "text-white"
+        {/* Progress Bar */}
+        <StepProgressBar currentStep={currentStep} totalSteps={totalSteps} />
+
+        {/* Recipe Title */}
+        <View className="px-4 py-4">
+          <Text className="text-center text-base text-stone-400" numberOfLines={1}>
+            {recipe.title}
+          </Text>
+        </View>
+
+        {/* Steps Pager */}
+        <FlatList
+          ref={flatListRef}
+          data={recipe.instructions}
+          renderItem={renderStep}
+          keyExtractor={(_, index) => `step-${index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          initialScrollIndex={0}
+          getItemLayout={(_, index) => ({
+            length: SCREEN_WIDTH,
+            offset: SCREEN_WIDTH * index,
+            index,
+          })}
+          className="flex-1"
+        />
+
+        {/* Active Timer Overlay */}
+        {activeTimer !== null && (
+          <View className="absolute bottom-32 left-0 right-0 px-4">
+            <CountdownTimer
+              initialSeconds={activeTimer}
+              onComplete={handleTimerComplete}
+              onDismiss={handleDismissTimer}
+              onTick={handleTimerTick}
+            />
+          </View>
+        )}
+
+        {/* Voice Assistant Button */}
+        <SpeechmaticsVoiceButton
+          recipe={voiceRecipe}
+          currentStep={currentStep}
+        />
+
+        {/* Navigation Buttons */}
+        <View className="flex-row items-center justify-between px-4 pb-8 pt-4">
+          <Pressable
+            onPress={goToPrevious}
+            disabled={currentStep === 0}
+            className={`h-14 w-14 items-center justify-center rounded-full ${
+              currentStep === 0
+                ? "bg-stone-800/50"
+                : "bg-stone-800 active:bg-stone-700"
             }`}
-          />
-        </Pressable>
-
-        {/* Step indicators */}
-        <View className="flex-row gap-2">
-          {recipe.instructions.map((_, index) => (
-            <Pressable
-              key={index}
-              onPress={() => goToStep(index)}
-              className={`h-2 rounded-full ${
-                index === currentStep
-                  ? "w-6 bg-orange-500"
-                  : "w-2 bg-stone-700"
+          >
+            <ChevronLeft
+              className={`h-6 w-6 ${
+                currentStep === 0 ? "text-stone-600" : "text-white"
               }`}
             />
-          ))}
-        </View>
+          </Pressable>
 
-        <Pressable
-          onPress={goToNext}
-          disabled={currentStep === totalSteps - 1}
-          className={`h-14 w-14 items-center justify-center rounded-full ${
-            currentStep === totalSteps - 1
-              ? "bg-stone-800/50"
-              : "bg-orange-500 active:bg-orange-600"
-          }`}
-        >
-          <ChevronRight
-            className={`h-6 w-6 ${
-              currentStep === totalSteps - 1 ? "text-stone-600" : "text-white"
+          {/* Step indicators */}
+          <View className="flex-row gap-2">
+            {recipe.instructions.map((_, index) => (
+              <Pressable
+                key={index}
+                onPress={() => goToStep(index)}
+                className={`h-2 rounded-full ${
+                  index === currentStep
+                    ? "w-6 bg-orange-500"
+                    : "w-2 bg-stone-700"
+                }`}
+              />
+            ))}
+          </View>
+
+          <Pressable
+            onPress={goToNext}
+            disabled={currentStep === totalSteps - 1}
+            className={`h-14 w-14 items-center justify-center rounded-full ${
+              currentStep === totalSteps - 1
+                ? "bg-stone-800/50"
+                : "bg-orange-500 active:bg-orange-600"
             }`}
-          />
-        </Pressable>
+          >
+            <ChevronRight
+              className={`h-6 w-6 ${
+                currentStep === totalSteps - 1 ? "text-stone-600" : "text-white"
+              }`}
+            />
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </SpeechmaticsFlowProvider>
   );
 }

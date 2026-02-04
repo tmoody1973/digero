@@ -75,3 +75,11 @@ export type {
   ScalingVoiceCallbacks,
   ScalingCommandResult,
 } from "./useScalingVoiceControl";
+
+// Speechmatics Flow voice assistant (recommended for cook-mode)
+export { useSpeechmaticsFlow } from "./useSpeechmaticsFlow";
+export type {
+  UseSpeechmaticsFlowReturn,
+  UseSpeechmaticsFlowOptions,
+  VoiceAssistantRecipe as SpeechmaticsVoiceRecipe,
+} from "./useSpeechmaticsFlow";

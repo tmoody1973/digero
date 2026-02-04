@@ -65,7 +65,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     // Android permissions for voice assistant
-    permissions: ["android.permission.RECORD_AUDIO"],
+    permissions: ["android.permission.RECORD_AUDIO", "android.permission.MODIFY_AUDIO_SETTINGS"],
   },
   web: {
     favicon: "./digero-app-icon.png",

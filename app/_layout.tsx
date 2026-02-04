@@ -1,3 +1,6 @@
+// Polyfill MUST be first import for Speechmatics Flow SDK
+import "event-target-polyfill";
+
 /**
  * Root Layout
  *

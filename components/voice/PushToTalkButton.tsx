@@ -5,7 +5,7 @@
  * Press and hold to record, release to send to AI.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Pressable, View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -22,10 +22,12 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 interface PushToTalkButtonProps {
   /** Current voice assistant state */
   state: VoiceAssistantState;
-  /** Called when user presses down on button */
-  onPressIn: () => void;
-  /** Called when user releases button */
-  onPressOut: () => void;
+  /** Called when user presses down on button (push-to-talk mode) */
+  onPressIn?: () => void;
+  /** Called when user releases button (push-to-talk mode) */
+  onPressOut?: () => void;
+  /** Called when user taps button (tap-to-toggle mode) */
+  onPress?: () => void;
   /** Whether the button is disabled */
   disabled?: boolean;
 }
@@ -54,6 +56,7 @@ export function PushToTalkButton({
   state,
   onPressIn,
   onPressOut,
+  onPress,
   disabled = false,
 }: PushToTalkButtonProps) {
   const insets = useSafeAreaInsets();
@@ -66,23 +69,45 @@ export function PushToTalkButton({
   const isDisabled = disabled || state === "processing" || state === "speaking";
   const isListening = state === "listening";
 
-  // Handle press in
+  // Determine mode: tap-to-toggle if onPress provided, otherwise push-to-talk
+  const isTapMode = !!onPress;
+
+  // Update animation based on listening state (for tap-to-toggle mode)
+  useEffect(() => {
+    if (isTapMode) {
+      if (isListening) {
+        scale.value = withSpring(1.15, { damping: 15, stiffness: 300 });
+        colorProgress.value = withSpring(1, { damping: 15, stiffness: 300 });
+      } else {
+        scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+        colorProgress.value = withSpring(0, { damping: 15, stiffness: 300 });
+      }
+    }
+  }, [isTapMode, isListening, scale, colorProgress]);
+
+  // Handle tap (tap-to-toggle mode)
+  const handlePress = useCallback(() => {
+    if (isDisabled || !onPress) return;
+    onPress();
+  }, [isDisabled, onPress]);
+
+  // Handle press in (push-to-talk mode)
   const handlePressIn = useCallback(() => {
-    if (isDisabled) return;
+    if (isDisabled || isTapMode) return;
 
     scale.value = withSpring(1.15, { damping: 15, stiffness: 300 });
     colorProgress.value = withSpring(1, { damping: 15, stiffness: 300 });
-    onPressIn();
-  }, [isDisabled, onPressIn, scale, colorProgress]);
+    onPressIn?.();
+  }, [isDisabled, isTapMode, onPressIn, scale, colorProgress]);
 
-  // Handle press out
+  // Handle press out (push-to-talk mode)
   const handlePressOut = useCallback(() => {
-    if (isDisabled) return;
+    if (isDisabled || isTapMode) return;
 
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
     colorProgress.value = withSpring(0, { damping: 15, stiffness: 300 });
-    onPressOut();
-  }, [isDisabled, onPressOut, scale, colorProgress]);
+    onPressOut?.();
+  }, [isDisabled, isTapMode, onPressOut, scale, colorProgress]);
 
   // Animated styles
   const animatedStyle = useAnimatedStyle(() => {
@@ -120,8 +145,9 @@ export function PushToTalkButton({
       }}
     >
       <AnimatedPressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPress={isTapMode ? handlePress : undefined}
+        onPressIn={isTapMode ? undefined : handlePressIn}
+        onPressOut={isTapMode ? undefined : handlePressOut}
         disabled={isDisabled}
         style={[
           {
