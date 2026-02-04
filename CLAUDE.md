@@ -188,6 +188,17 @@ export default function RecipesScreen() {
 4. **Test on device** — Use Expo Go during development
 5. **RevenueCat sandbox** — Test purchases in sandbox mode only
 
+## Convex Deployments
+
+| Environment | URL | Deployment Selector |
+|-------------|-----|---------------------|
+| Development | https://energetic-fish-994.convex.cloud | `dev:energetic-fish-994` |
+
+**Always deploy to dev during development:**
+```bash
+npx convex dev
+```
+
 ## Quick Commands
 
 ```bash
@@ -197,7 +208,7 @@ npx expo start
 # Run on iOS simulator
 npx expo run:ios
 
-# Deploy Convex functions
+# Deploy Convex functions (interactive, watches for changes)
 npx convex dev
 
 # Build for TestFlight

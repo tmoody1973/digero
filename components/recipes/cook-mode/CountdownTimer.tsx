@@ -14,17 +14,26 @@ interface CountdownTimerProps {
   initialSeconds: number;
   onComplete?: () => void;
   onDismiss?: () => void;
+  /** Called every second with the remaining time */
+  onTick?: (remainingSeconds: number) => void;
 }
 
 export function CountdownTimer({
   initialSeconds,
   onComplete,
   onDismiss,
+  onTick,
 }: CountdownTimerProps) {
   const [remainingSeconds, setRemainingSeconds] = useState(initialSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onTickRef = useRef(onTick);
+
+  // Keep onTick ref up to date
+  useEffect(() => {
+    onTickRef.current = onTick;
+  }, [onTick]);
 
   // Clear interval on unmount
   useEffect(() => {
@@ -40,7 +49,12 @@ export function CountdownTimer({
     if (isRunning && remainingSeconds > 0) {
       intervalRef.current = setInterval(() => {
         setRemainingSeconds((prev) => {
-          if (prev <= 1) {
+          const newValue = prev - 1;
+
+          // Notify parent of tick
+          onTickRef.current?.(newValue);
+
+          if (newValue <= 0) {
             setIsRunning(false);
             setIsComplete(true);
             // Vibration alert
@@ -48,7 +62,7 @@ export function CountdownTimer({
             onComplete?.();
             return 0;
           }
-          return prev - 1;
+          return newValue;
         });
       }, 1000);
     }
@@ -73,6 +87,7 @@ export function CountdownTimer({
     setIsRunning(false);
     setIsComplete(false);
     setRemainingSeconds(initialSeconds);
+    onTickRef.current?.(initialSeconds);
   }, [initialSeconds]);
 
   // Format time for display

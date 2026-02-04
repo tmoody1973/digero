@@ -35,6 +35,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSCameraUsageDescription: "Allow Digero to access your camera to scan recipes from cookbooks",
       // Photo library for recipe images
       NSPhotoLibraryUsageDescription: "Allow Digero to access your photos to add images to recipes",
+      // Microphone usage for voice cooking assistant
+      NSMicrophoneUsageDescription: "Allow microphone access for hands-free cooking assistance",
     },
     // Required capabilities for RevenueCat
     entitlements: {
@@ -62,6 +64,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         category: ["BROWSABLE", "DEFAULT"],
       },
     ],
+    // Android permissions for voice assistant
+    permissions: ["android.permission.RECORD_AUDIO"],
   },
   web: {
     favicon: "./digero-app-icon.png",
@@ -92,6 +96,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
         // Optional: customize the share extension name
         // iosShareExtensionName: "Share to Digero",
+      },
+    ],
+    [
+      "expo-audio",
+      {
+        microphonePermission: "Allow microphone access for hands-free cooking assistance",
       },
     ],
   ],

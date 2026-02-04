@@ -5,7 +5,7 @@
  * Screen stays awake while in this mode.
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -40,6 +40,8 @@ export default function CookModeScreen() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [activeTimer, setActiveTimer] = useState<number | null>(null);
+  const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
+  const [timerRunning, setTimerRunning] = useState(true);
 
   const recipe = useQuery(api.recipes.get, {
     id: id as Id<"recipes">,
@@ -69,14 +71,22 @@ export default function CookModeScreen() {
   // Handle timer
   const handleStartTimer = useCallback((seconds: number) => {
     setActiveTimer(seconds);
+    setTimerRemaining(seconds);
+    setTimerRunning(true);
   }, []);
 
   const handleTimerComplete = useCallback(() => {
-    // Timer completed - could auto-advance or show notification
+    setTimerRemaining(0);
   }, []);
 
   const handleDismissTimer = useCallback(() => {
     setActiveTimer(null);
+    setTimerRemaining(null);
+    setTimerRunning(true);
+  }, []);
+
+  const handleTimerTick = useCallback((remaining: number) => {
+    setTimerRemaining(remaining);
   }, []);
 
   // Handle scroll end to update current step
@@ -203,6 +213,7 @@ export default function CookModeScreen() {
             initialSeconds={activeTimer}
             onComplete={handleTimerComplete}
             onDismiss={handleDismissTimer}
+            onTick={handleTimerTick}
           />
         </View>
       )}
