@@ -4,7 +4,7 @@
  * Defines the database schema for Digero's recipe management system.
  * Includes tables for users, recipes, physical cookbooks, digital cookbooks,
  * scan sessions, meal planner, shopping lists, YouTube channels,
- * and subscription tracking with proper indexing for efficient queries.
+ * AI chat messages, and subscription tracking with proper indexing for efficient queries.
  */
 
 import { defineSchema, defineTable } from "convex/server";
@@ -57,13 +57,14 @@ const ingredientCategory = v.union(
 
 /**
  * Recipe source validator
- * 4-value union for tracking recipe origin
+ * 5-value union for tracking recipe origin (includes ai_generated)
  */
 const recipeSource = v.union(
   v.literal("youtube"),
   v.literal("website"),
   v.literal("scanned"),
-  v.literal("manual")
+  v.literal("manual"),
+  v.literal("ai_generated")
 );
 
 /**
@@ -143,6 +144,15 @@ const channelCategory = v.union(
   v.literal("Healthy"),
   v.literal("BBQ & Grilling"),
   v.literal("General")
+);
+
+/**
+ * AI Chat message role validator
+ * 2-value union for distinguishing user and assistant messages
+ */
+const chatRole = v.union(
+  v.literal("user"),
+  v.literal("assistant")
 );
 
 /**
@@ -611,4 +621,41 @@ export default defineSchema({
   })
     // Index for date lookup
     .index("by_date", ["date"]),
+
+  /**
+   * AI Chat Messages Table
+   *
+   * Stores conversation history for AI recipe chat feature.
+   * Messages are retained for 30 days and cleaned up via cron job.
+   * Supports multimodal input (text and images) and structured recipe responses.
+   */
+  aiChatMessages: defineTable({
+    // User relationship - Clerk user ID for multi-tenancy
+    userId: v.string(),
+
+    // Message content
+    text: v.string(),
+
+    // Message role (user or assistant)
+    role: chatRole,
+
+    // Optional image URL for multimodal input (user-uploaded ingredient photos)
+    imageUrl: v.optional(v.string()),
+
+    // Structured recipe data from AI response (stored as JSON)
+    // Contains: summary, recipes array, meal_plan object
+    recipeData: v.optional(v.any()),
+
+    // Clarification questions from AI for quick reply buttons
+    clarificationQuestions: v.optional(v.array(v.string())),
+
+    // Timestamp (Unix milliseconds)
+    createdAt: v.number(),
+  })
+    // Index for fetching user's chat messages
+    .index("by_user", ["userId"])
+    // Index for chronological ordering within user's chat
+    .index("by_user_created", ["userId", "createdAt"])
+    // Index for cleanup cron job (messages older than 30 days)
+    .index("by_created", ["createdAt"]),
 });

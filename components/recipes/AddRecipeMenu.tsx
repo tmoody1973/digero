@@ -7,6 +7,7 @@
  * - YouTube URL
  * - YouTube Search
  * - Scan from photo
+ * - Sous Chef (AI-powered recipe chat)
  */
 
 import React from "react";
@@ -23,6 +24,7 @@ import {
   Youtube,
   Search,
   Camera,
+  MessageSquare,
   X,
 } from "lucide-react-native";
 
@@ -34,6 +36,7 @@ interface AddRecipeMenuProps {
   onYoutubeUrl: () => void;
   onYoutubeSearch: () => void;
   onScanPhoto: () => void;
+  onAiChat?: () => void;
 }
 
 interface MenuOption {
@@ -54,6 +57,7 @@ export function AddRecipeMenu({
   onYoutubeUrl,
   onYoutubeSearch,
   onScanPhoto,
+  onAiChat,
 }: AddRecipeMenuProps) {
   const options: MenuOption[] = [
     {
@@ -101,6 +105,20 @@ export function AddRecipeMenu({
       description: "Take a photo of a recipe",
       onPress: onScanPhoto,
     },
+    // Sous Chef option - only shown if callback is provided
+    ...(onAiChat
+      ? [
+          {
+            id: "ai-chat",
+            icon: MessageSquare,
+            iconColor: "#22c55e",
+            iconBg: "bg-green-100 dark:bg-green-900/30",
+            title: "Sous Chef",
+            description: "Chat with AI for recipe ideas",
+            onPress: onAiChat,
+          },
+        ]
+      : []),
   ];
 
   return (

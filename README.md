@@ -8,6 +8,7 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 
 ### Key Features
 
+- **Sous Chef Chat** — Conversational AI assistant for recipe ideas, cooking tips, and ingredient questions
 - **Import from Anywhere** — Paste a URL from any recipe website or YouTube cooking video
 - **iOS Share Extension** — Share recipes directly from Safari or YouTube to Digero
 - **YouTube Discovery** — Browse trending cooking channels and import video recipes
@@ -16,6 +17,7 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 - **Cookbook Organization** — Create custom collections to organize your recipes
 - **Meal Planning** — Plan your weekly meals with a drag-and-drop calendar
 - **Smart Shopping Lists** — Auto-generate shopping lists from your meal plan
+- **Instacart Integration** — Send shopping lists directly to Instacart for easy ordering
 - **Cook Mode** — Hands-free step-by-step cooking guidance with voice assistant
 - **Voice Assistant** — Ask questions while cooking using Speechmatics Flow AI
 - **Dark Mode** — Full dark theme support
@@ -29,7 +31,8 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 | Backend | Convex (real-time database) |
 | Auth | Clerk (email, Apple, Google) |
 | Payments | RevenueCat |
-| AI | Google Gemini API, Speechmatics Flow |
+| AI | Google Gemini 2.0 Flash, Speechmatics Flow |
+| Chat UI | react-native-gifted-chat |
 | Styling | NativeWind v4 (Tailwind CSS) |
 | Icons | lucide-react-native |
 
@@ -76,6 +79,7 @@ Create a `.env.local` file with the following:
 | `YOUTUBE_API_KEY` | YouTube Data API v3 key |
 | `REVENUECAT_WEBHOOK_SECRET` | RevenueCat webhook auth |
 | `SPEECHMATICS_API_KEY` | Speechmatics Flow API key |
+| `INSTACART_API_KEY` | Instacart Developer Platform API key |
 
 ### Development
 
@@ -109,6 +113,7 @@ digero/
 │   └── _layout.tsx         # Root layout with providers
 ├── components/             # Shared UI components
 │   ├── recipes/            # Recipe-related components
+│   ├── chat/               # Sous Chef chat components
 │   ├── cookbooks/          # Cookbook components
 │   └── navigation/         # Navigation components
 ├── contexts/               # React contexts
@@ -125,6 +130,19 @@ digero/
 ```
 
 ## Features in Detail
+
+### Sous Chef Chat
+
+Your personal AI cooking assistant powered by Gemini 2.0 Flash:
+
+- **Conversational** — Chat naturally about cooking, ask questions, get tips
+- **Recipe Generation** — Describe ingredients you have and get custom recipes
+- **Image Recognition** — Take a photo of ingredients and get meal suggestions
+- **Voice Input** — Speak your requests hands-free
+- **Quick Replies** — Tap suggested follow-up questions
+- **Save to Library** — Add AI-generated recipes directly to your collection
+
+Access Sous Chef from the Add Recipe menu or navigate to Recipes > Sous Chef.
 
 ### Recipe Import
 
@@ -203,6 +221,12 @@ eas build --platform android --profile production
 1. Create an account at [Speechmatics Portal](https://portal.speechmatics.com/)
 2. Generate an API key
 3. Set in Convex: `npx convex env set SPEECHMATICS_API_KEY your_key`
+
+### Instacart (Shopping Integration)
+
+1. Create an account at [Instacart Developer Platform](https://developer.instacart.com/)
+2. Create a new application and get your API key
+3. Set in Convex: `npx convex env set INSTACART_API_KEY your_key`
 
 ## Contributing
 

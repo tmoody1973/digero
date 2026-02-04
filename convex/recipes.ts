@@ -8,6 +8,11 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
+import {
+  transformAiIngredients,
+  transformAiSteps,
+  getPlaceholderImageUrl,
+} from "./lib/aiRecipeTransform";
 
 /**
  * Ingredient category validator
@@ -25,12 +30,14 @@ const ingredientCategory = v.union(
 
 /**
  * Recipe source validator
+ * 5-value union including ai_generated for AI chef feature
  */
 const recipeSource = v.union(
   v.literal("youtube"),
   v.literal("website"),
   v.literal("scanned"),
-  v.literal("manual")
+  v.literal("manual"),
+  v.literal("ai_generated")
 );
 
 /**
@@ -71,6 +78,27 @@ const nutritionObject = v.object({
   protein: v.number(),
   carbs: v.number(),
   fat: v.number(),
+});
+
+/**
+ * AI ingredient validator (from Gemini response)
+ */
+const aiIngredientObject = v.object({
+  name: v.string(),
+  quantity: v.string(),
+  unit: v.string(),
+  is_optional: v.boolean(),
+  note: v.optional(v.string()),
+});
+
+/**
+ * AI step validator (from Gemini response)
+ */
+const aiStepObject = v.object({
+  step_number: v.number(),
+  instruction: v.string(),
+  estimated_time_minutes: v.optional(v.number()),
+  notes: v.optional(v.string()),
 });
 
 // ============================================================================
@@ -302,6 +330,80 @@ export const saveFromYouTube = mutation({
       isFavorited: false,
       difficulty: args.difficulty,
       dietaryTags: args.dietaryTags ?? [],
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return recipeId;
+  },
+});
+
+/**
+ * Save an AI-generated recipe
+ *
+ * Convenience mutation for saving recipes from the AI Chef feature.
+ * Transforms AI recipe format to app format and sets source to 'ai_generated'.
+ * Handles ingredient quantity parsing and category assignment.
+ */
+export const saveAiGeneratedRecipe = mutation({
+  args: {
+    // AI recipe fields (from Gemini response)
+    aiRecipeId: v.string(),
+    name: v.string(),
+    servings: v.number(),
+    estimatedTotalTimeMinutes: v.number(),
+    difficulty: difficultyLevel,
+    tags: v.array(v.string()),
+    whyItWorks: v.string(),
+    ingredients: v.array(aiIngredientObject),
+    steps: v.array(aiStepObject),
+    nutritionNotes: v.optional(v.string()),
+    // Optional image URL (can be generated separately)
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Require authentication
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = identity.subject;
+    const now = Date.now();
+
+    // Transform AI ingredients to app format
+    const transformedIngredients = transformAiIngredients(args.ingredients);
+
+    // Transform AI steps to instruction strings
+    const instructions = transformAiSteps(args.steps);
+
+    // Generate placeholder image if not provided
+    const imageUrl = args.imageUrl || getPlaceholderImageUrl(args.name);
+
+    // Build notes field with AI recipe reference and why_it_works
+    const notes = `AI Recipe ID: ${args.aiRecipeId}\n\nWhy it works: ${args.whyItWorks}${
+      args.nutritionNotes ? `\n\nNutrition: ${args.nutritionNotes}` : ""
+    }`;
+
+    // Estimate prep and cook time from total (assume 30% prep, 70% cook)
+    const prepTime = Math.round(args.estimatedTotalTimeMinutes * 0.3);
+    const cookTime = args.estimatedTotalTimeMinutes - prepTime;
+
+    // Create recipe with ai_generated source
+    const recipeId = await ctx.db.insert("recipes", {
+      userId,
+      title: args.name,
+      source: "ai_generated",
+      imageUrl,
+      servings: args.servings,
+      prepTime,
+      cookTime,
+      ingredients: transformedIngredients,
+      instructions,
+      notes,
+      isFavorited: false,
+      difficulty: args.difficulty,
+      dietaryTags: args.tags,
       createdAt: now,
       updatedAt: now,
     });
@@ -586,7 +688,7 @@ export const getFavoriteRecipes = query({
  *
  * Returns paginated recipes for the authenticated user with support for:
  * - Text search on title and ingredient names
- * - Source type filtering (youtube, website, scanned, manual)
+ * - Source type filtering (youtube, website, scanned, manual, ai_generated)
  * - Multiple sort options (mostRecent, alphabetical, cookTime, calories, recentlyCooked)
  * - Cursor-based pagination for infinite scroll
  */

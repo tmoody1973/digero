@@ -6,9 +6,9 @@
  */
 
 import { View, Text } from "react-native";
-import { Youtube, Globe, Camera, PenLine, LucideIcon } from "lucide-react-native";
+import { Youtube, Globe, Camera, PenLine, Sparkles, LucideIcon } from "lucide-react-native";
 
-type RecipeSource = "youtube" | "website" | "scanned" | "manual";
+type RecipeSource = "youtube" | "website" | "scanned" | "manual" | "ai_generated";
 
 interface SourceBadgeProps {
   source: RecipeSource;
@@ -45,6 +45,12 @@ const sourceConfig: Record<RecipeSource, SourceConfig> = {
     icon: PenLine,
     label: "Manual",
     bgColor: "bg-green-500",
+    textColor: "text-white",
+  },
+  ai_generated: {
+    icon: Sparkles,
+    label: "AI Generated",
+    bgColor: "bg-purple-500",
     textColor: "text-white",
   },
 };
