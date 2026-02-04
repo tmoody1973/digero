@@ -40,7 +40,7 @@ export function ChatCustomView({
   if (!currentMessage) return null;
 
   // Check if this is an AI message (not from the current user)
-  const isAiMessage = currentMessage.user._id === "ai_chef";
+  const isAiMessage = currentMessage.user._id === "sous_chef";
   if (!isAiMessage) return null;
 
   const { recipeData, clarificationQuestions } = currentMessage;
