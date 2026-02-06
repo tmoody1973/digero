@@ -346,9 +346,9 @@ export const generateRecipeChat = action({
     }
 
     // Get the Gemini API key
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY_CHAT || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY not configured");
+      console.warn("GEMINI_API_KEY_CHAT / GEMINI_API_KEY not configured");
       return {
         success: false,
         data: null,
@@ -395,7 +395,20 @@ export const generateRecipeChat = action({
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Gemini API error:", errorText);
+        console.error("Gemini API error:", response.status, errorText);
+
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          return {
+            success: false,
+            data: null,
+            error: {
+              type: "RATE_LIMITED",
+              message: "Sous Chef is taking a short break due to high demand. Please try again in a minute.",
+            },
+          };
+        }
+
         return {
           success: false,
           data: null,

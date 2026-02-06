@@ -11,7 +11,7 @@ import { v } from "convex/values";
 import { action } from "../_generated/server";
 import { api } from "../_generated/api";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY_EXTRACT || process.env.GEMINI_API_KEY;
 
 type DietType = "vegetarian" | "vegan" | "gluten-free";
 

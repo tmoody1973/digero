@@ -12,10 +12,13 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { CustomerInfo } from "@revenuecat/purchases-expo";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import {
   configureRevenueCat,
   getCustomerInfo,
@@ -101,6 +104,50 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Convex mutation to sync subscription status
+  const syncToConvex = useMutation(api.subscriptions.syncSubscriptionFromClient);
+  const lastSyncedTierRef = useRef<string | null>(null);
+  const syncToConvexRef = useRef(syncToConvex);
+  syncToConvexRef.current = syncToConvex;
+
+  /**
+   * Sync RevenueCat subscription info to Convex database
+   * This ensures the backend knows the user's tier for rate limiting, etc.
+   * Uses ref to avoid triggering useEffect re-runs when mutation reference changes.
+   */
+  const syncSubscriptionToConvex = useCallback(
+    async (info: SubscriptionInfo) => {
+      const tier = info.isTrialPeriod ? "trial" : (info.tier ?? (info.isPremium ? "plus" : "free"));
+
+      // Skip if we already synced this tier
+      if (lastSyncedTierRef.current === tier) return;
+
+      try {
+        // Map subscriptionType to the format Convex expects
+        let convexSubType: "monthly" | "annual" | "lifetime" | undefined;
+        if (info.subscriptionType) {
+          if (info.subscriptionType.includes("monthly")) convexSubType = "monthly";
+          else if (info.subscriptionType.includes("annual") || info.subscriptionType === "yearly") convexSubType = "annual";
+          else if (info.subscriptionType === "lifetime") convexSubType = "lifetime";
+        }
+
+        await syncToConvexRef.current({
+          tier: tier as "free" | "plus" | "creator" | "trial",
+          subscriptionType: convexSubType,
+          expiresAt: info.expiresAt ? info.expiresAt.getTime() : undefined,
+          isTrialPeriod: info.isTrialPeriod || undefined,
+          hasBillingIssue: info.hasBillingIssue || undefined,
+        });
+
+        lastSyncedTierRef.current = tier;
+        console.log(`Synced subscription to Convex: ${tier}`);
+      } catch (error) {
+        console.error("Failed to sync subscription to Convex:", error);
+      }
+    },
+    []
+  );
+
   /**
    * Initialize RevenueCat SDK and set up listener
    */
@@ -122,13 +169,20 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         // Get initial customer info
         const info = await getCustomerInfo();
         setCustomerInfo(info);
-        setSubscriptionInfo(parseSubscriptionInfo(info));
+        const parsedInfo = parseSubscriptionInfo(info);
+        setSubscriptionInfo(parsedInfo);
         setIsInitialized(true);
+
+        // Sync to Convex on init
+        await syncSubscriptionToConvex(parsedInfo);
 
         // Set up listener for real-time updates
         unsubscribe = addCustomerInfoListener((updatedInfo) => {
           setCustomerInfo(updatedInfo);
-          setSubscriptionInfo(parseSubscriptionInfo(updatedInfo));
+          const updatedParsed = parseSubscriptionInfo(updatedInfo);
+          setSubscriptionInfo(updatedParsed);
+          // Sync any changes to Convex
+          syncSubscriptionToConvex(updatedParsed);
         });
 
         // Attempt auto-restore for free users
@@ -137,7 +191,10 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
           const result = await restorePurchases();
           if (result.hasPremium && result.customerInfo) {
             setCustomerInfo(result.customerInfo);
-            setSubscriptionInfo(parseSubscriptionInfo(result.customerInfo));
+            const restoredInfo = parseSubscriptionInfo(result.customerInfo);
+            setSubscriptionInfo(restoredInfo);
+            // Sync restored subscription to Convex
+            await syncSubscriptionToConvex(restoredInfo);
           }
         }
       } catch (error) {
@@ -175,20 +232,24 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   }, [isLoaded, isSignedIn, isInitialized]);
 
   /**
-   * Refresh subscription status
+   * Refresh subscription status and sync to Convex
    */
   const refresh = useCallback(async () => {
     try {
       setIsLoading(true);
       const info = await getCustomerInfo();
       setCustomerInfo(info);
-      setSubscriptionInfo(parseSubscriptionInfo(info));
+      const parsedInfo = parseSubscriptionInfo(info);
+      setSubscriptionInfo(parsedInfo);
+      // Force sync on manual refresh
+      lastSyncedTierRef.current = null;
+      await syncSubscriptionToConvex(parsedInfo);
     } catch (error) {
       console.error("Failed to refresh subscription:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [syncSubscriptionToConvex]);
 
   /**
    * Get offerings wrapper
@@ -198,31 +259,37 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   }, []);
 
   /**
-   * Purchase wrapper with automatic state update
+   * Purchase wrapper with automatic state update and Convex sync
    */
   const purchase = useCallback(
     async (packageId: string): Promise<PurchaseResult> => {
       const result = await purchasePackage(packageId);
       if (result.success && result.customerInfo) {
         setCustomerInfo(result.customerInfo);
-        setSubscriptionInfo(parseSubscriptionInfo(result.customerInfo));
+        const parsedInfo = parseSubscriptionInfo(result.customerInfo);
+        setSubscriptionInfo(parsedInfo);
+        // Sync purchase to Convex immediately
+        await syncSubscriptionToConvex(parsedInfo);
       }
       return result;
     },
-    []
+    [syncSubscriptionToConvex]
   );
 
   /**
-   * Restore wrapper with automatic state update
+   * Restore wrapper with automatic state update and Convex sync
    */
   const restore = useCallback(async (): Promise<RestoreResult> => {
     const result = await restorePurchases();
     if (result.success && result.customerInfo) {
       setCustomerInfo(result.customerInfo);
-      setSubscriptionInfo(parseSubscriptionInfo(result.customerInfo));
+      const parsedInfo = parseSubscriptionInfo(result.customerInfo);
+      setSubscriptionInfo(parsedInfo);
+      // Sync restored subscription to Convex
+      await syncSubscriptionToConvex(parsedInfo);
     }
     return result;
-  }, []);
+  }, [syncSubscriptionToConvex]);
 
   const value: SubscriptionContextType = {
     isPremium: subscriptionInfo.isPremium,

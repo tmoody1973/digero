@@ -617,6 +617,65 @@ export const setBillingIssue = internalMutation({
  *
  * Resets user to free tier when subscription expires.
  */
+/**
+ * Sync subscription status from client-side RevenueCat SDK
+ *
+ * Called by the app after a purchase or on app launch to ensure
+ * the Convex database reflects the user's actual RevenueCat subscription.
+ * This works even without webhooks (important for sandbox/testing).
+ */
+export const syncSubscriptionFromClient = mutation({
+  args: {
+    tier: v.union(v.literal("free"), v.literal("plus"), v.literal("creator"), v.literal("trial")),
+    subscriptionType: v.optional(v.union(v.literal("monthly"), v.literal("annual"), v.literal("lifetime"))),
+    expiresAt: v.optional(v.number()),
+    isTrialPeriod: v.optional(v.boolean()),
+    hasBillingIssue: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    const clerkId = identity.subject;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Only update if the tier has actually changed
+    const currentStatus = user.subscriptionStatus ?? "free";
+    if (currentStatus === args.tier && !args.hasBillingIssue) {
+      return { updated: false, status: currentStatus };
+    }
+
+    const updates: Record<string, unknown> = {
+      subscriptionStatus: args.tier,
+      updatedAt: Date.now(),
+    };
+
+    if (args.subscriptionType !== undefined) {
+      updates.subscriptionType = args.subscriptionType;
+    }
+    if (args.expiresAt !== undefined) {
+      updates.subscriptionExpiresAt = args.expiresAt;
+    }
+    if (args.hasBillingIssue !== undefined) {
+      updates.hasBillingIssue = args.hasBillingIssue;
+    }
+
+    await ctx.db.patch(user._id, updates);
+
+    return { updated: true, status: args.tier };
+  },
+});
+
 export const clearSubscription = internalMutation({
   args: {
     clerkId: v.string(),

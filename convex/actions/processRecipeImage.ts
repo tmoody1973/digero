@@ -226,9 +226,9 @@ export const processRecipeImage = action({
     const { imageBase64, mimeType } = args;
 
     // Get the Gemini API key
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY_EXTRACT || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn("GEMINI_API_KEY not configured");
+      console.warn("GEMINI_API_KEY_EXTRACT / GEMINI_API_KEY not configured");
       return {
         success: false,
         error: {
