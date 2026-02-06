@@ -180,6 +180,30 @@ export default function RecipesScreen() {
 }
 ```
 
+## Bug Fixing
+
+When fixing bugs, always verify the fix by running the relevant tests or manually testing the affected functionality before marking complete.
+
+## Code Patterns
+
+When working with Convex mutations or queries, double-check argument references (`args.input` vs `args.id`, `args.userId`, etc.) as these are a common source of bugs. Always ensure the handler function signature includes both `ctx` and `args` parameters.
+
+```typescript
+// ✅ Correct - args parameter included
+handler: async (ctx, args) => {
+  const user = await ctx.db.get(args.userId);
+}
+
+// ❌ Wrong - missing args parameter causes runtime errors
+handler: async (ctx) => {
+  const user = await ctx.db.get(args.userId); // args is undefined!
+}
+```
+
+## Workflow
+
+When a session involves multiple issues, complete and verify each fix individually before moving to the next to avoid leaving issues partially investigated.
+
 ## Critical Reminders
 
 1. **Apple Developer Enrollment** — Start immediately, 24-48 hour approval wait
