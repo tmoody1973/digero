@@ -10,6 +10,7 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 
 - **Sous Chef Chat** — Conversational AI assistant for recipe ideas, cooking tips, and ingredient questions
 - **Import from Anywhere** — Paste a URL from any recipe website or YouTube cooking video
+- **Creator Attribution** — Show channel names and website sources to support creators
 - **iOS Share Extension** — Share recipes directly from Safari or YouTube to Digero
 - **YouTube Discovery** — Browse trending cooking channels and import video recipes
 - **AI-Powered Extraction** — Gemini AI extracts ingredients and instructions automatically
@@ -21,6 +22,36 @@ Digero is a mobile recipe app that helps home cooks save recipes from YouTube vi
 - **Cook Mode** — Hands-free step-by-step cooking guidance with voice assistant
 - **Voice Assistant** — Ask questions while cooking using Speechmatics Flow AI
 - **Dark Mode** — Full dark theme support
+
+## Creator Economy
+
+Digero features a Nebula-inspired creator economy that rewards cooking content creators:
+
+### For Creators
+
+- **Creator Dashboard** — Track earnings, engagement, and Recipe Engagement Score (RES)
+- **Creator Shop** — Sell cookbooks, equipment, and digital products
+- **Profit Sharing** — 50% of subscription revenue goes to the creator pool
+- **Partnership Tiers** — Standard, Partner, and Elite tiers with increasing benefits
+
+### How It Works
+
+1. **Recipe Engagement Score (RES)** — Creators earn points when users save, cook, share, or rate their recipes
+2. **Revenue Pool** — 50% of all subscription revenue goes to the creator pool
+3. **Fair Distribution** — Creators receive payouts proportional to their RES share
+4. **Tier Multipliers** — Higher tiers earn RES bonuses (1.25x for Partner, 1.5x for Elite)
+
+## Subscription Tiers
+
+| Feature | Free | Plus ($4.99/mo) | Creator ($9.99/mo) |
+|---------|------|-----------------|-------------------|
+| Save Recipes | 10 | Unlimited | Unlimited |
+| AI Chat Messages | 5/day | Unlimited | Unlimited |
+| Recipe Scans | 3/month | Unlimited | Unlimited |
+| Exclusive Recipes | — | ✓ | ✓ |
+| Creator Dashboard | — | — | ✓ |
+| Sell Products | — | — | ✓ |
+| Ad-Free Experience | — | ✓ | ✓ |
 
 ## Tech Stack
 
@@ -104,28 +135,35 @@ digero/
 ├── app/                    # expo-router screens
 │   ├── (app)/              # Authenticated app screens
 │   │   ├── recipes/        # Recipe list, detail, cook mode
-│   │   ├── add-recipe/     # Recipe import flows
 │   │   ├── discover/       # YouTube channel discovery
-│   │   ├── meal-plan/      # Meal planning calendar
+│   │   ├── creator/        # Creator dashboard and shop
+│   │   ├── meal-planner/   # Meal planning calendar
 │   │   ├── shopping/       # Shopping lists
-│   │   └── settings.tsx    # App settings
+│   │   └── settings/       # App settings and subscription
 │   ├── (auth)/             # Authentication screens
+│   ├── (onboarding)/       # Onboarding flow
 │   └── _layout.tsx         # Root layout with providers
 ├── components/             # Shared UI components
 │   ├── recipes/            # Recipe-related components
 │   ├── chat/               # Sous Chef chat components
+│   ├── creator/            # Creator dashboard components
+│   ├── subscription/       # Paywall and tier components
 │   ├── cookbooks/          # Cookbook components
 │   └── navigation/         # Navigation components
-├── contexts/               # React contexts
-│   ├── ThemeContext.tsx    # Dark mode management
-│   └── SubscriptionContext.tsx
 ├── convex/                 # Convex backend
 │   ├── actions/            # Server actions (AI, external APIs)
 │   ├── recipes.ts          # Recipe queries/mutations
+│   ├── creator.ts          # Creator profiles and applications
+│   ├── creatorShop.ts      # Product and order management
+│   ├── creatorMessaging.ts # Creator-to-follower messaging
+│   ├── subscriptions.ts    # Subscription management
 │   ├── users.ts            # User management
 │   └── schema.ts           # Database schema
 ├── hooks/                  # Custom React hooks
 ├── lib/                    # Utilities and helpers
+│   ├── revenuecat.ts       # RevenueCat configuration
+│   ├── subscriptionTiers.ts # Tier limits and features
+│   └── creatorUtils.ts     # Creator-related utilities
 └── ios/                    # Native iOS code + Share Extension
 ```
 
@@ -151,6 +189,18 @@ Import recipes from:
 - **YouTube** — Import from cooking videos with transcript extraction
 - **Share Extension** — Share directly from Safari or YouTube app
 - **Manual Entry** — Create recipes from scratch
+
+All imported recipes show the source (channel name for YouTube, website domain for URLs) to properly attribute creators.
+
+### Creator Dashboard
+
+For users with Creator tier subscriptions:
+
+- **Earnings Overview** — Track total earnings and pending payouts
+- **Recipe Analytics** — See which recipes drive the most engagement
+- **RES Tracking** — Monitor your Recipe Engagement Score in real-time
+- **Product Management** — Add and manage shop products
+- **Follower Messaging** — Send updates to your followers
 
 ### Dietary Conversions
 
@@ -213,8 +263,13 @@ eas build --platform android --profile production
 
 1. Create a project at [RevenueCat](https://www.revenuecat.com/)
 2. Add your iOS app with bundle ID
-3. Create products and entitlements
-4. Copy the API key to `.env.local`
+3. Create products:
+   - `digero_plus_monthly` — $4.99/month
+   - `digero_plus_annual` — $49.99/year
+   - `digero_creator_monthly` — $9.99/month
+   - `digero_creator_annual` — $99.99/year
+4. Create entitlements: `plus`, `creator`
+5. Copy the API key to `.env.local`
 
 ### Speechmatics Flow (Voice Assistant)
 
