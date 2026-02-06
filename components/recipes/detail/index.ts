@@ -12,3 +12,4 @@ export { InstructionsSection } from "./InstructionsSection";
 export { YouTubeEmbed } from "./YouTubeEmbed";
 export { DietaryConversionButtons } from "./DietaryConversionButtons";
 export { ActionButtons } from "./ActionButtons";
+export { InstacartRecipeButton } from "./InstacartRecipeButton";

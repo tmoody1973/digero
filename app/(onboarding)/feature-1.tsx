@@ -15,7 +15,7 @@ export default function Feature1Screen() {
   return (
     <OnboardingContainer
       currentStep={1}
-      totalSteps={5}
+      totalSteps={6}
       onSkip={() => router.push("/(onboarding)/profile-setup")}
     >
       <FeatureScreen

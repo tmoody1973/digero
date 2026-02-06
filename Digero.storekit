@@ -1,0 +1,191 @@
+{
+  "identifier" : "Digero Products",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "1234567890",
+    "_developerTeamID" : "XXXXXXXXXX",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 744984502.05727303,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "digero_premium",
+      "localizations" : [
+
+      ],
+      "name" : "Digero Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "plus_monthly_001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Access exclusive recipes and member discounts",
+              "displayName" : "Digero Plus Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "digero_plus_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Plus Monthly",
+          "subscriptionGroupID" : "digero_premium",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "plus_annual_001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Access exclusive recipes and member discounts - save 17%",
+              "displayName" : "Digero Plus Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "digero_plus_annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Plus Annual",
+          "subscriptionGroupID" : "digero_premium",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "creator_monthly_001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Support creators and unlock all premium features",
+              "displayName" : "Digero Creator Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "digero_creator_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Creator Monthly",
+          "subscriptionGroupID" : "digero_premium",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "creator_annual_001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Support creators and unlock all premium features - save 17%",
+              "displayName" : "Digero Creator Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "digero_creator_annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Creator Annual",
+          "subscriptionGroupID" : "digero_premium",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

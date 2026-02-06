@@ -5,8 +5,8 @@
  * Handles SDK initialization, purchases, paywalls, and customer center.
  *
  * API Key: test_JLISJBCUFjETcUUgjjBrzQCDRXW
- * Entitlement: Digero Pro
- * Products: monthly, yearly, lifetime
+ * Entitlements: plus, creator
+ * Products: digero_plus_monthly, digero_plus_annual, digero_creator_monthly, digero_creator_annual
  */
 
 import Purchases, {
@@ -26,17 +26,30 @@ import { Platform, Linking } from "react-native";
 /** RevenueCat API Key - Use test key for development */
 export const REVENUECAT_API_KEY = "test_JLISJBCUFjETcUUgjjBrzQCDRXW";
 
-/** Premium entitlement identifier in RevenueCat */
-export const PREMIUM_ENTITLEMENT = "Digero Pro";
+/** Entitlement identifiers in RevenueCat */
+export const ENTITLEMENTS = {
+  PLUS: "plus",
+  CREATOR: "creator",
+} as const;
+
+/** Legacy entitlement for backwards compatibility */
+export const PREMIUM_ENTITLEMENT = "plus";
 
 /** Default offering identifier */
 export const DEFAULT_OFFERING = "default";
 
-/** Product identifiers */
+/** Product identifiers for new subscription tiers */
 export const PRODUCTS = {
-  MONTHLY: "monthly",
-  YEARLY: "yearly",
-  LIFETIME: "lifetime",
+  // Plus tier
+  PLUS_MONTHLY: "digero_plus_monthly",
+  PLUS_ANNUAL: "digero_plus_annual",
+  // Creator tier
+  CREATOR_MONTHLY: "digero_creator_monthly",
+  CREATOR_ANNUAL: "digero_creator_annual",
+  // Legacy (for backwards compatibility)
+  MONTHLY: "digero_plus_monthly",
+  YEARLY: "digero_plus_annual",
+  LIFETIME: "digero_plus_annual", // Map lifetime to annual for now
 } as const;
 
 // =============================================================================
@@ -45,7 +58,8 @@ export const PRODUCTS = {
 
 export interface SubscriptionInfo {
   isPremium: boolean;
-  subscriptionType: "monthly" | "yearly" | "lifetime" | null;
+  subscriptionType: "plus_monthly" | "plus_annual" | "creator_monthly" | "creator_annual" | "monthly" | "yearly" | "lifetime" | null;
+  tier: "free" | "plus" | "creator";
   expiresAt: Date | null;
   isTrialPeriod: boolean;
   hasBillingIssue: boolean;
@@ -107,16 +121,17 @@ export async function configureRevenueCat(clerkUserId?: string): Promise<void> {
   }
 
   try {
+    // Set log level BEFORE configure in development
+    if (__DEV__) {
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+    }
+
     // Configure SDK with API key
     Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
       appUserID: clerkUserId || undefined,
+      usesStoreKit2IfAvailable: true, // Enable StoreKit 2 for simulator testing
     });
-
-    // Set log level based on environment
-    if (__DEV__) {
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    }
 
     isConfigured = true;
     console.log("RevenueCat configured successfully", clerkUserId ? `for user: ${clerkUserId}` : "anonymously");
@@ -181,48 +196,75 @@ export async function getCustomerInfo(): Promise<CustomerInfo> {
  * Parse subscription info from CustomerInfo
  *
  * Extracts relevant subscription details from RevenueCat CustomerInfo.
+ * Supports both new tiers (plus/creator) and legacy products.
  */
 export function parseSubscriptionInfo(customerInfo: CustomerInfo): SubscriptionInfo {
-  const premiumEntitlement = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT];
-  const isPremium = !!premiumEntitlement;
+  // Check for creator tier first (higher tier takes precedence)
+  const creatorEntitlement = customerInfo.entitlements.active[ENTITLEMENTS.CREATOR];
+  const plusEntitlement = customerInfo.entitlements.active[ENTITLEMENTS.PLUS];
+  const legacyEntitlement = customerInfo.entitlements.active["Digero Pro"]; // Legacy support
 
-  let subscriptionType: "monthly" | "yearly" | "lifetime" | null = null;
+  const activeEntitlement = creatorEntitlement || plusEntitlement || legacyEntitlement;
+  const isPremium = !!activeEntitlement;
+
+  // Determine tier
+  let tier: "free" | "plus" | "creator" = "free";
+  if (creatorEntitlement) {
+    tier = "creator";
+  } else if (plusEntitlement || legacyEntitlement) {
+    tier = "plus";
+  }
+
+  let subscriptionType: SubscriptionInfo["subscriptionType"] = null;
   let expiresAt: Date | null = null;
   let isTrialPeriod = false;
   let hasBillingIssue = false;
   let willRenew = false;
 
-  if (premiumEntitlement) {
+  if (activeEntitlement) {
     // Determine subscription type from product identifier
-    const productId = premiumEntitlement.productIdentifier;
-    if (productId.includes(PRODUCTS.MONTHLY) || productId === "monthly") {
+    const productId = activeEntitlement.productIdentifier;
+
+    // New tier products
+    if (productId === PRODUCTS.PLUS_MONTHLY || productId.includes("plus_monthly")) {
+      subscriptionType = "plus_monthly";
+    } else if (productId === PRODUCTS.PLUS_ANNUAL || productId.includes("plus_annual")) {
+      subscriptionType = "plus_annual";
+    } else if (productId === PRODUCTS.CREATOR_MONTHLY || productId.includes("creator_monthly")) {
+      subscriptionType = "creator_monthly";
+    } else if (productId === PRODUCTS.CREATOR_ANNUAL || productId.includes("creator_annual")) {
+      subscriptionType = "creator_annual";
+    }
+    // Legacy products
+    else if (productId === "monthly") {
       subscriptionType = "monthly";
-    } else if (productId.includes(PRODUCTS.YEARLY) || productId === "yearly") {
+    } else if (productId === "yearly") {
       subscriptionType = "yearly";
-    } else if (productId.includes(PRODUCTS.LIFETIME) || productId === "lifetime") {
+    } else if (productId === "lifetime") {
       subscriptionType = "lifetime";
     }
 
     // Get expiration date (null for lifetime)
-    if (premiumEntitlement.expirationDate) {
-      expiresAt = new Date(premiumEntitlement.expirationDate);
+    if (activeEntitlement.expirationDate) {
+      expiresAt = new Date(activeEntitlement.expirationDate);
     }
 
     // Check trial status
-    isTrialPeriod = premiumEntitlement.periodType === "TRIAL";
+    isTrialPeriod = activeEntitlement.periodType === "TRIAL";
 
     // Check billing issue
-    if (premiumEntitlement.billingIssueDetectedAt) {
+    if (activeEntitlement.billingIssueDetectedAt) {
       hasBillingIssue = true;
     }
 
     // Check if will renew
-    willRenew = premiumEntitlement.willRenew;
+    willRenew = activeEntitlement.willRenew;
   }
 
   return {
     isPremium,
     subscriptionType,
+    tier,
     expiresAt,
     isTrialPeriod,
     hasBillingIssue,
@@ -231,17 +273,41 @@ export function parseSubscriptionInfo(customerInfo: CustomerInfo): SubscriptionI
 }
 
 /**
- * Check if user has premium entitlement (Digero Pro)
+ * Check if user has any premium entitlement (plus or creator)
  *
  * Quick check for premium access.
  */
 export async function checkPremiumStatus(): Promise<boolean> {
   try {
     const customerInfo = await getCustomerInfo();
-    return !!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT];
+    const active = customerInfo.entitlements.active;
+    return !!(active[ENTITLEMENTS.PLUS] || active[ENTITLEMENTS.CREATOR] || active["Digero Pro"]);
   } catch (error) {
     console.error("Failed to check premium status:", error);
     return false;
+  }
+}
+
+/**
+ * Get current subscription tier
+ *
+ * Returns the user's current tier: "free", "plus", or "creator"
+ */
+export async function getSubscriptionTier(): Promise<"free" | "plus" | "creator"> {
+  try {
+    const customerInfo = await getCustomerInfo();
+    const active = customerInfo.entitlements.active;
+
+    if (active[ENTITLEMENTS.CREATOR]) {
+      return "creator";
+    }
+    if (active[ENTITLEMENTS.PLUS] || active["Digero Pro"]) {
+      return "plus";
+    }
+    return "free";
+  } catch (error) {
+    console.error("Failed to get subscription tier:", error);
+    return "free";
   }
 }
 

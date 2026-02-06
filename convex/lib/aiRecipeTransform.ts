@@ -452,12 +452,29 @@ export function transformAiSteps(
  * @returns Placeholder image URL
  */
 export function getPlaceholderImageUrl(recipeName: string): string {
-  // Truncate and encode recipe name for URL
-  const truncatedName = recipeName.length > 25
-    ? recipeName.substring(0, 25) + "..."
-    : recipeName;
-  const encodedName = encodeURIComponent(truncatedName);
+  // Use a variety of food-themed placeholder images based on recipe name hash
+  // This creates visual variety while keeping images relevant to cooking
+  const foodPlaceholders = [
+    // Unsplash food images (free, reliable CDN)
+    "https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=800&h=600&fit=crop", // Cooking ingredients
+    "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=800&h=600&fit=crop", // Fresh vegetables
+    "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=600&fit=crop", // Healthy meal prep
+    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=600&fit=crop", // Plated dish
+    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800&h=600&fit=crop", // Pasta
+    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=600&fit=crop", // Salad bowl
+    "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&h=600&fit=crop", // Salmon dish
+    "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=800&h=600&fit=crop", // Soup
+    "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=600&fit=crop", // Pizza
+    "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=800&h=600&fit=crop", // Breakfast
+  ];
 
-  // Purple background (matching AI Generated badge), white text with sparkle
-  return `https://placehold.co/800x600/a855f7/ffffff?text=%E2%9C%A8+${encodedName}`;
+  // Simple hash function to deterministically pick an image based on recipe name
+  let hash = 0;
+  for (let i = 0; i < recipeName.length; i++) {
+    hash = ((hash << 5) - hash) + recipeName.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  const index = Math.abs(hash) % foodPlaceholders.length;
+  return foodPlaceholders[index];
 }

@@ -3,13 +3,14 @@
  *
  * HTTP endpoints for external service integrations.
  * Includes Clerk webhook handler for user synchronization
- * and RevenueCat webhook handler for subscription management.
+ * and RevenueCat webhook handler for subscription management with OneSignal sync.
  */
 
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Webhook } from "svix";
+import { syncSubscriptionTags } from "./lib/onesignalUtils";
 
 /**
  * Verify HMAC-SHA256 signature using Web Crypto API
@@ -174,6 +175,8 @@ http.route({
  * - EXPIRATION: Subscription expired
  * - BILLING_ISSUE: Payment failed
  * - PRODUCT_CHANGE: User changed subscription product
+ *
+ * Also syncs subscription status to OneSignal for targeted messaging.
  */
 http.route({
   path: "/webhooks/revenuecat",
@@ -227,20 +230,29 @@ http.route({
     }
 
     try {
+      // Variables to track subscription state for OneSignal sync
+      let subscriptionTier: "free" | "plus" | "creator" | "trial" = "free";
+      let subscriptionStatus: "active" | "expired" | "trial" | "cancelled" = "active";
+      let expiresAt: number | undefined;
+
       switch (eventType) {
         case "INITIAL_PURCHASE": {
           // New subscription started (could be trial or direct purchase)
           const productId = event.event?.product_id ?? "";
           const subscriptionType = getSubscriptionTypeFromProductId(productId);
-          const expiresAt = event.event?.expiration_at_ms ?? null;
+          expiresAt = event.event?.expiration_at_ms ?? undefined;
           const isTrialPeriod = event.event?.is_trial_period ?? false;
           const revenuecatUserId = event.event?.original_app_user_id ?? clerkId;
 
+          // Determine tier from product ID
+          subscriptionTier = getTierFromProductId(productId, isTrialPeriod);
+          subscriptionStatus = isTrialPeriod ? "trial" : "active";
+
           await ctx.runMutation(internal.subscriptions.updateSubscription, {
             clerkId,
-            subscriptionStatus: isTrialPeriod ? "trial" : "premium",
+            subscriptionStatus: subscriptionTier,
             subscriptionType: subscriptionType ?? undefined,
-            subscriptionExpiresAt: subscriptionType === "lifetime" ? undefined : expiresAt ?? undefined,
+            subscriptionExpiresAt: subscriptionType === "lifetime" ? undefined : expiresAt,
             revenuecatUserId,
             hasBillingIssue: false,
           });
@@ -251,12 +263,15 @@ http.route({
 
         case "RENEWAL": {
           // Subscription renewed
-          const expiresAt = event.event?.expiration_at_ms ?? null;
+          const productId = event.event?.product_id ?? "";
+          expiresAt = event.event?.expiration_at_ms ?? undefined;
+          subscriptionTier = getTierFromProductId(productId, false);
+          subscriptionStatus = "active";
 
           await ctx.runMutation(internal.subscriptions.updateSubscription, {
             clerkId,
-            subscriptionStatus: "premium",
-            subscriptionExpiresAt: expiresAt ?? undefined,
+            subscriptionStatus: subscriptionTier,
+            subscriptionExpiresAt: expiresAt,
             hasBillingIssue: false,
           });
 
@@ -266,14 +281,17 @@ http.route({
 
         case "CANCELLATION": {
           // Subscription cancelled but still active until expiration
-          const expiresAt = event.event?.expiration_at_ms ?? null;
+          const productId = event.event?.product_id ?? "";
+          expiresAt = event.event?.expiration_at_ms ?? undefined;
           const canceledAt = Date.now();
+          subscriptionTier = getTierFromProductId(productId, false);
+          subscriptionStatus = "cancelled";
 
           await ctx.runMutation(internal.subscriptions.updateSubscription, {
             clerkId,
-            subscriptionStatus: "premium", // Still premium until expiration
+            subscriptionStatus: subscriptionTier, // Still has access until expiration
             subscriptionCanceledAt: canceledAt,
-            subscriptionExpiresAt: expiresAt ?? undefined,
+            subscriptionExpiresAt: expiresAt,
           });
 
           console.log(`Cancellation for user: ${clerkId}, expires: ${expiresAt}`);
@@ -282,6 +300,9 @@ http.route({
 
         case "EXPIRATION": {
           // Subscription expired - revert to free
+          subscriptionTier = "free";
+          subscriptionStatus = "expired";
+
           await ctx.runMutation(internal.subscriptions.clearSubscription, {
             clerkId,
           });
@@ -292,6 +313,11 @@ http.route({
 
         case "BILLING_ISSUE": {
           // Payment failed - set billing issue flag
+          // Keep current tier but mark status
+          const productId = event.event?.product_id ?? "";
+          subscriptionTier = getTierFromProductId(productId, false);
+          subscriptionStatus = "active"; // Still active, but has billing issue
+
           await ctx.runMutation(internal.subscriptions.setBillingIssue, {
             clerkId,
             hasBillingIssue: true,
@@ -305,13 +331,15 @@ http.route({
           // User changed subscription product (upgrade/downgrade)
           const productId = event.event?.product_id ?? "";
           const subscriptionType = getSubscriptionTypeFromProductId(productId);
-          const expiresAt = event.event?.expiration_at_ms ?? null;
+          expiresAt = event.event?.expiration_at_ms ?? undefined;
+          subscriptionTier = getTierFromProductId(productId, false);
+          subscriptionStatus = "active";
 
           await ctx.runMutation(internal.subscriptions.updateSubscription, {
             clerkId,
-            subscriptionStatus: "premium",
+            subscriptionStatus: subscriptionTier,
             subscriptionType: subscriptionType ?? undefined,
-            subscriptionExpiresAt: subscriptionType === "lifetime" ? undefined : expiresAt ?? undefined,
+            subscriptionExpiresAt: subscriptionType === "lifetime" ? undefined : expiresAt,
           });
 
           console.log(`Product change for user: ${clerkId}, new product: ${productId}`);
@@ -320,6 +348,35 @@ http.route({
 
         default:
           console.log(`Unhandled RevenueCat event type: ${eventType}`);
+          return new Response("Webhook processed", { status: 200 });
+      }
+
+      // Sync tags to OneSignal
+      // First, get the user's OneSignal player ID
+      const user = await ctx.runQuery(internal.users.getUserByClerkIdInternal, {
+        clerkId,
+      });
+
+      if (user?.onesignalPlayerId) {
+        try {
+          const syncResult = await syncSubscriptionTags(
+            user.onesignalPlayerId,
+            subscriptionTier,
+            subscriptionStatus,
+            expiresAt
+          );
+
+          if (syncResult.success) {
+            console.log(`OneSignal tags synced for user: ${clerkId}`);
+          } else {
+            console.error(`OneSignal tag sync failed for user: ${clerkId}`, syncResult.error);
+          }
+        } catch (syncError) {
+          // Log but don't fail the webhook - subscription update is more important
+          console.error("OneSignal sync error (non-fatal):", syncError);
+        }
+      } else {
+        console.log(`No OneSignal player ID for user: ${clerkId}, skipping tag sync`);
       }
 
       return new Response("Webhook processed", { status: 200 });
@@ -346,6 +403,31 @@ function getSubscriptionTypeFromProductId(
     return "lifetime";
   }
   return null;
+}
+
+/**
+ * Helper to determine subscription tier from RevenueCat product ID
+ */
+function getTierFromProductId(
+  productId: string,
+  isTrialPeriod: boolean
+): "free" | "plus" | "creator" | "trial" {
+  if (isTrialPeriod) {
+    return "trial";
+  }
+  // Check for creator tier products
+  if (productId.includes("creator")) {
+    return "creator";
+  }
+  // Check for plus tier products
+  if (productId.includes("plus") || productId.includes("premium") || productId.includes("pro")) {
+    return "plus";
+  }
+  // Default to plus for any recognized subscription
+  if (productId.includes("monthly") || productId.includes("annual") || productId.includes("lifetime")) {
+    return "plus";
+  }
+  return "free";
 }
 
 // =============================================================================

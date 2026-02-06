@@ -15,15 +15,15 @@ export default function Feature4Screen() {
   return (
     <OnboardingContainer
       currentStep={4}
-      totalSteps={5}
+      totalSteps={6}
       onSkip={() => router.push("/(onboarding)/profile-setup")}
     >
       <FeatureScreen
         iconName="list"
         title="Generate Shopping Lists"
         description="Automatically create shopping lists from your meal plan. Check off items as you shop, and never forget an ingredient again."
-        onNext={() => router.push("/(onboarding)/profile-setup")}
-        nextLabel="Set Up Profile"
+        onNext={() => router.push("/(onboarding)/free-tier")}
+        nextLabel="Continue"
       />
     </OnboardingContainer>
   );

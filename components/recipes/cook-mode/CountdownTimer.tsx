@@ -51,15 +51,15 @@ export function CountdownTimer({
         setRemainingSeconds((prev) => {
           const newValue = prev - 1;
 
-          // Notify parent of tick
-          onTickRef.current?.(newValue);
+          // Notify parent of tick - use setTimeout to avoid setState during render
+          setTimeout(() => onTickRef.current?.(newValue), 0);
 
           if (newValue <= 0) {
             setIsRunning(false);
             setIsComplete(true);
             // Vibration alert
             Vibration.vibrate([500, 200, 500, 200, 500]);
-            onComplete?.();
+            setTimeout(() => onComplete?.(), 0);
             return 0;
           }
           return newValue;
@@ -87,7 +87,8 @@ export function CountdownTimer({
     setIsRunning(false);
     setIsComplete(false);
     setRemainingSeconds(initialSeconds);
-    onTickRef.current?.(initialSeconds);
+    // Defer callback to avoid setState during render
+    setTimeout(() => onTickRef.current?.(initialSeconds), 0);
   }, [initialSeconds]);
 
   // Format time for display

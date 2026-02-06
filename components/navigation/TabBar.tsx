@@ -24,16 +24,16 @@ interface TabItem {
 
 const tabs: TabItem[] = [
   {
-    name: "recipes",
-    label: "Recipes",
-    icon: UtensilsCrossed,
-    path: "/(app)",
-  },
-  {
     name: "discover",
     label: "Discover",
     icon: Compass,
     path: "/(app)/discover",
+  },
+  {
+    name: "recipes",
+    label: "Recipes",
+    icon: UtensilsCrossed,
+    path: "/(app)/recipes-home",
   },
   {
     name: "cookbooks",
@@ -60,9 +60,13 @@ export function TabBar() {
   const pathname = usePathname();
 
   const isActive = (tab: TabItem) => {
+    if (tab.name === "discover") {
+      // Active when on discover or root (which redirects to discover)
+      return pathname === "/" || pathname.startsWith("/discover");
+    }
     if (tab.name === "recipes") {
-      // Active when on home or recipe detail pages
-      return pathname === "/" || pathname.startsWith("/recipes");
+      // Active when on recipes-home or recipe detail pages
+      return pathname === "/recipes-home" || pathname.startsWith("/recipes");
     }
     if (tab.name === "meal-planner") {
       return pathname.startsWith("/meal-planner");

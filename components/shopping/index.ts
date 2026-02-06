@@ -10,3 +10,4 @@ export { AddItemForm } from "./AddItemForm";
 export { CategorySection } from "./CategorySection";
 export { SyncStatusIndicator } from "./SyncStatusIndicator";
 export { MealSelectionModal } from "./MealSelectionModal";
+export { InstacartButton } from "./InstacartButton";

@@ -6,6 +6,7 @@
 
 export { ChannelCard } from "./ChannelCard";
 export { VideoCard } from "./VideoCard";
+export { SpotlightCard } from "./SpotlightCard";
 export { CategoryChip } from "./CategoryChip";
 export { VideoPlayerModal } from "./VideoPlayerModal";
 export { YouTubeRecipePreviewModal } from "./YouTubeRecipePreviewModal";
@@ -18,6 +19,7 @@ export type {
   YouTubeRecipePreview,
   Category,
   ViewMode,
+  FeedViewMode,
   ChannelFilter,
   ExtractionState,
   ExtractionConfidence,

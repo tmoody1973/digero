@@ -182,6 +182,8 @@ export default function YouTubeImportScreen() {
         youtubeVideoId: preview.videoId,
         sourceUrl: `https://www.youtube.com/watch?v=${preview.videoId}`,
         imageUrl: preview.thumbnailUrl,
+        // Creator attribution - YouTube channel name
+        sourceName: preview.channelName,
         notes: preview.description.substring(0, 500), // Store description as notes
       });
 

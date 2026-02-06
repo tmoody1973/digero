@@ -28,6 +28,12 @@ export default function RecipesLayout() {
           presentation: "fullScreenModal",
         }}
       />
+      <Stack.Screen
+        name="ai-chat"
+        options={{
+          presentation: "fullScreenModal",
+        }}
+      />
       <Stack.Screen name="[id]" />
     </Stack>
   );

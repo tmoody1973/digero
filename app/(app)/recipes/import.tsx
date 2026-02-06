@@ -15,6 +15,35 @@ import type { ReviewRecipeData } from "@/components/import/types";
 
 type ImportStep = "url" | "review";
 
+/**
+ * Extract domain name from URL for attribution
+ * e.g., "https://www.seriouseats.com/recipe" -> "Serious Eats"
+ */
+function extractDomainName(url: string): string {
+  try {
+    const parsed = new URL(url);
+    let hostname = parsed.hostname;
+
+    // Remove www. prefix
+    hostname = hostname.replace(/^www\./, "");
+
+    // Split by dots and get the main domain
+    const parts = hostname.split(".");
+    if (parts.length >= 2) {
+      // Get the domain name (second to last part)
+      const domain = parts[parts.length - 2];
+      // Capitalize first letter of each word
+      return domain
+        .split(/[-_]/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+    return hostname;
+  } catch {
+    return "Website";
+  }
+}
+
 export default function RecipeImportScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -39,10 +68,14 @@ export default function RecipeImportScreen() {
   const handleSaveRecipe = useCallback(
     async (data: ReviewRecipeData) => {
       try {
+        // Extract domain name for attribution
+        const sourceName = data.sourceUrl ? extractDomainName(data.sourceUrl) : undefined;
+
         const recipeId = await createRecipe({
           title: data.title,
           source: "website",
           sourceUrl: data.sourceUrl,
+          sourceName,
           imageUrl: data.imageUrl || "https://via.placeholder.com/400x300?text=No+Image",
           servings: data.servings,
           prepTime: data.prepTime,

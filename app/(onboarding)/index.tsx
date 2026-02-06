@@ -7,6 +7,7 @@
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { OnboardingContainer } from "@/components/onboarding/OnboardingContainer";
+import { DigeroLogo } from "@/components/brand";
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
@@ -14,20 +15,18 @@ export default function OnboardingWelcomeScreen() {
   return (
     <OnboardingContainer
       currentStep={0}
-      totalSteps={5}
+      totalSteps={6}
       onSkip={() => router.push("/(onboarding)/profile-setup")}
     >
       <View className="flex-1 items-center justify-center px-8">
-        {/* Illustration placeholder */}
-        <View className="w-64 h-64 bg-orange-100 dark:bg-orange-900/30 rounded-full items-center justify-center mb-8">
-          <Text className="text-6xl">
-            {/* Chef hat emoji placeholder */}
-          </Text>
+        {/* Logo */}
+        <View className="mb-8">
+          <DigeroLogo width={200} height={89} />
         </View>
 
         {/* Title */}
         <Text className="text-3xl font-bold text-stone-900 dark:text-stone-100 text-center mb-4">
-          Welcome to Digero!
+          Welcome!
         </Text>
 
         {/* Description */}

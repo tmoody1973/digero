@@ -25,7 +25,7 @@ function getCategoryIcon(
   categoryName: string,
   isSelected: boolean
 ): React.ReactNode {
-  const color = isSelected ? "#fff" : "#78716c";
+  const color = isSelected ? "#fff" : "#f97316"; // Orange icon when not selected
   const size = 16;
 
   switch (categoryName) {
@@ -57,13 +57,13 @@ export function CategoryChip({
       className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${
         isSelected
           ? "bg-orange-500"
-          : "bg-stone-800 border border-stone-700 active:border-orange-500/50"
+          : "bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 active:border-orange-500/50"
       }`}
     >
       {getCategoryIcon(category.name, isSelected)}
       <Text
         className={`text-sm font-medium ${
-          isSelected ? "text-white" : "text-stone-400"
+          isSelected ? "text-white" : "text-stone-700 dark:text-stone-400"
         }`}
       >
         {category.name}

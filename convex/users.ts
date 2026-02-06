@@ -6,7 +6,7 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 
 /**
  * Cooking skill level validator
@@ -136,6 +136,30 @@ export const deleteUserByClerkId = internalMutation({
     await ctx.db.delete(user._id);
 
     return user._id;
+  },
+});
+
+// ============================================================================
+// INTERNAL QUERIES (for webhook and action use)
+// ============================================================================
+
+/**
+ * Get user by Clerk ID (internal - called from webhooks/actions)
+ *
+ * Returns the user record for a given Clerk ID.
+ * Used by RevenueCat webhook to fetch OneSignal player ID for tag sync.
+ */
+export const getUserByClerkIdInternal = internalQuery({
+  args: {
+    clerkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .unique();
+
+    return user;
   },
 });
 
@@ -272,6 +296,42 @@ export const completeOnboarding = mutation({
       cookingSkillLevel: args.cookingSkillLevel,
       dietaryRestrictions: args.dietaryRestrictions,
       hasCompletedOnboarding: true,
+      updatedAt: Date.now(),
+    });
+
+    return user._id;
+  },
+});
+
+/**
+ * Update OneSignal player ID
+ *
+ * Stores the user's OneSignal player ID for push notification targeting.
+ * Called when OneSignal SDK initializes in the app.
+ */
+export const updateOneSignalPlayerId = mutation({
+  args: {
+    playerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    const clerkId = identity.subject;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      onesignalPlayerId: args.playerId,
       updatedAt: Date.now(),
     });
 

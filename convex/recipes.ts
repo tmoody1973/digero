@@ -118,6 +118,8 @@ export const createRecipe = mutation({
     source: recipeSource,
     sourceUrl: v.optional(v.string()),
     youtubeVideoId: v.optional(v.string()),
+    // Creator attribution - channel name for YouTube, domain for websites
+    sourceName: v.optional(v.string()),
     imageUrl: v.string(),
     servings: v.number(),
     prepTime: v.number(),
@@ -182,6 +184,7 @@ export const createRecipe = mutation({
       source: args.source,
       sourceUrl: args.sourceUrl,
       youtubeVideoId: args.youtubeVideoId,
+      sourceName: args.sourceName,
       imageUrl: args.imageUrl,
       servings: args.servings,
       prepTime: args.prepTime,
@@ -297,6 +300,8 @@ export const saveFromYouTube = mutation({
     youtubeVideoId: v.string(),
     sourceUrl: v.string(),
     imageUrl: v.string(),
+    // Creator attribution - YouTube channel name
+    sourceName: v.optional(v.string()),
     notes: v.optional(v.string()),
     cuisineType: v.optional(v.string()),
     difficulty: v.optional(difficultyLevel),
@@ -319,6 +324,7 @@ export const saveFromYouTube = mutation({
       source: "youtube",
       sourceUrl: args.sourceUrl,
       youtubeVideoId: args.youtubeVideoId,
+      sourceName: args.sourceName,
       imageUrl: args.imageUrl,
       servings: args.servings,
       prepTime: args.prepTime,
@@ -586,6 +592,112 @@ export const toggleFavorite = mutation({
 // ============================================================================
 // QUERIES
 // ============================================================================
+
+/**
+ * List all recipes (admin use only, no auth required)
+ *
+ * Used to debug recipe data issues.
+ */
+export const listAllRecipesAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const recipes = await ctx.db.query("recipes").take(50);
+    return recipes.map((r) => ({
+      _id: r._id,
+      title: r.title,
+      userId: r.userId,
+      source: r.source,
+      createdAt: r.createdAt,
+    }));
+  },
+});
+
+/**
+ * Demo YouTube video IDs used in seed data
+ * These identify recipes that were created by the demo seeder
+ */
+const DEMO_VIDEO_IDS = [
+  "dQw4w9WgXcQ",
+  "xvFZjo5PgG0",
+  "abc123demo",
+  "def456demo",
+  "ghi789demo",
+  "jkl012demo",
+  "mno345demo",
+  "pqr678demo",
+];
+
+/**
+ * Delete demo recipes from a user's account
+ *
+ * Removes recipes that were accidentally seeded to a real user.
+ * Identifies demo recipes by their known YouTube video IDs.
+ */
+export const deleteDemoRecipesForUser = mutation({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Find all recipes for this user with demo video IDs
+    const userRecipes = await ctx.db
+      .query("recipes")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const demoRecipes = userRecipes.filter(
+      (r) => r.youtubeVideoId && DEMO_VIDEO_IDS.includes(r.youtubeVideoId)
+    );
+
+    // Delete each demo recipe
+    for (const recipe of demoRecipes) {
+      await ctx.db.delete(recipe._id);
+    }
+
+    return {
+      deletedCount: demoRecipes.length,
+      deletedTitles: demoRecipes.map((r) => r.title),
+    };
+  },
+});
+
+/**
+ * Fix placeholder images for AI-generated recipes
+ *
+ * Updates AI-generated recipes that have broken placeholder URLs
+ * (like placehold.co) with proper Unsplash food images.
+ */
+export const fixAiRecipePlaceholders = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Find all AI-generated recipes with broken placeholder images
+    const allRecipes = await ctx.db.query("recipes").collect();
+
+    const recipesToFix = allRecipes.filter(
+      (r) =>
+        r.source === "ai_generated" &&
+        r.imageUrl &&
+        (r.imageUrl.includes("placehold.co") ||
+          r.imageUrl.includes("placeholder") ||
+          !r.imageUrl.startsWith("https://images.unsplash.com"))
+    );
+
+    const fixed: string[] = [];
+
+    for (const recipe of recipesToFix) {
+      const newImageUrl = getPlaceholderImageUrl(recipe.title);
+      await ctx.db.patch(recipe._id, {
+        imageUrl: newImageUrl,
+        updatedAt: Date.now(),
+      });
+      fixed.push(recipe.title);
+    }
+
+    return {
+      fixedCount: fixed.length,
+      fixedRecipes: fixed,
+    };
+  },
+});
 
 /**
  * Get all recipes for the authenticated user

@@ -35,6 +35,7 @@ import {
   YouTubeEmbed,
   DietaryConversionButtons,
   ActionButtons,
+  InstacartRecipeButton,
 } from "@/components/recipes/detail";
 import { AddToCookbookModal } from "@/components/cookbooks";
 import { TabBar } from "@/components/navigation";
@@ -48,9 +49,13 @@ export default function RecipeDetailScreen() {
   const [isConverting, setIsConverting] = useState(false);
   const [convertingType, setConvertingType] = useState<DietType | null>(null);
 
-  const recipe = useQuery(api.recipes.get, {
-    id: id as Id<"recipes">,
-  });
+  // Guard against invalid IDs (like "ai-chat" being caught by dynamic route)
+  const isValidId = id && !["ai-chat", "create", "import", "scan", "youtube-import", "youtube-search"].includes(id);
+
+  const recipe = useQuery(
+    api.recipes.get,
+    isValidId ? { id: id as Id<"recipes"> } : "skip"
+  );
 
   const toggleFavorite = useMutation(api.recipes.toggleFavorite);
   const deleteRecipe = useMutation(api.recipes.deleteRecipe);
@@ -86,9 +91,9 @@ export default function RecipeDetailScreen() {
 
   // Handle edit
   const handleEdit = useCallback(() => {
-    // Edit functionality to be implemented
-    Alert.alert("Edit", "Editing will be available soon!");
-  }, []);
+    if (!recipe) return;
+    router.push(`/(app)/recipes/${recipe._id}/edit`);
+  }, [recipe, router]);
 
   // Handle cook mode
   const handleCookMode = useCallback(() => {
@@ -256,7 +261,7 @@ export default function RecipeDetailScreen() {
         {/* Title overlay */}
         <View className="absolute bottom-0 left-0 right-0 p-6">
           <View className="mb-3">
-            <SourceBadge source={recipe.source} />
+            <SourceBadge source={recipe.source} sourceName={recipe.sourceName} />
           </View>
           <Text className="text-2xl font-bold text-white">{recipe.title}</Text>
           {recipe.physicalCookbook && (
@@ -284,6 +289,12 @@ export default function RecipeDetailScreen() {
           <ChefHat className="h-5 w-5 text-white" />
           <Text className="text-lg font-semibold text-white">Start Cooking</Text>
         </Pressable>
+
+        {/* Order Ingredients with Instacart */}
+        <InstacartRecipeButton
+          recipeId={recipe._id}
+          ingredientCount={recipe.ingredients?.length || 0}
+        />
 
         {/* YouTube Video */}
         {recipe.source === "youtube" && recipe.youtubeVideoId && (

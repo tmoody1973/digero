@@ -15,12 +15,14 @@ import { Id } from "@/convex/_generated/dataModel";
 import { SourceBadge } from "./SourceBadge";
 import type { ViewMode } from "./ViewModeToggle";
 
-type RecipeSource = "youtube" | "website" | "scanned" | "manual";
+type RecipeSource = "youtube" | "website" | "scanned" | "manual" | "ai_generated";
 
 interface Recipe {
   _id: Id<"recipes">;
   title: string;
   source: RecipeSource;
+  /** Creator name (YouTube channel) or website domain */
+  sourceName?: string;
   imageUrl: string;
   servings: number;
   prepTime: number;
@@ -83,7 +85,7 @@ export function RecipeCard({ recipe, viewMode, onPress }: RecipeCardProps) {
             resizeMode="cover"
           />
           <View className="absolute bottom-1 left-1">
-            <SourceBadge source={recipe.source} compact />
+            <SourceBadge source={recipe.source} sourceName={recipe.sourceName} compact />
           </View>
         </View>
 
@@ -153,7 +155,7 @@ export function RecipeCard({ recipe, viewMode, onPress }: RecipeCardProps) {
 
         {/* Source badge */}
         <View className="absolute left-3 top-3">
-          <SourceBadge source={recipe.source} />
+          <SourceBadge source={recipe.source} sourceName={recipe.sourceName} />
         </View>
 
         {/* Favorite button */}

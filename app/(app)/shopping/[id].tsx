@@ -29,6 +29,7 @@ import {
   AddItemForm,
   CategorySection,
   SyncStatusIndicator,
+  InstacartButton,
 } from "@/components/shopping";
 import type { ItemCategory, SyncStatus, ShoppingItem } from "@/types/shopping-list";
 import { ITEM_CATEGORIES } from "@/types/shopping-list";
@@ -305,6 +306,13 @@ export default function ShoppingListDetailScreen() {
 
           <View className="flex-row items-center gap-2">
             <SyncStatusIndicator status={syncStatus} />
+            {!isReadOnly && (
+              <InstacartButton
+                listId={listId}
+                itemCount={list.totalItems - list.checkedItems}
+                disabled={list.totalItems === 0}
+              />
+            )}
             <Pressable
               onPress={handleShare}
               className="flex-row items-center gap-1 px-3 py-1.5 bg-stone-100 dark:bg-stone-800 rounded-lg"

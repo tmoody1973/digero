@@ -105,6 +105,7 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="index" />
+      <Stack.Screen name="recipes-home" />
       <Stack.Screen name="recipes" />
       <Stack.Screen name="cookbooks/index" />
       <Stack.Screen name="cookbooks/[id]" />
@@ -113,6 +114,9 @@ export default function AppLayout() {
       <Stack.Screen name="shopping/index" />
       <Stack.Screen name="shopping/[id]" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="settings/purchases" />
+      <Stack.Screen name="creator/apply" />
+      <Stack.Screen name="creator" />
     </Stack>
   );
 }

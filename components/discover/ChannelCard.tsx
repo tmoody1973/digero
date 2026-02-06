@@ -3,11 +3,12 @@
  *
  * Displays a YouTube channel card with avatar, name, description,
  * subscriber count, category tag, and follow button.
+ * Supports both grid (default) and list view modes.
  */
 
 import React from "react";
 import { View, Text, Pressable, Image } from "react-native";
-import { Star, Check } from "lucide-react-native";
+import { Star, Check, Users, Video } from "lucide-react-native";
 import type { ChannelCardProps } from "./types";
 
 /**
@@ -54,6 +55,7 @@ function getCategoryColor(category: string): string {
 
 export function ChannelCard({
   channel,
+  viewMode = "grid",
   onPress,
   onFollow,
   onUnfollow,
@@ -67,13 +69,102 @@ export function ChannelCard({
     }
   };
 
+  // List view layout - horizontal card with full details
+  if (viewMode === "list") {
+    return (
+      <Pressable
+        onPress={onPress}
+        className="flex-row bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 overflow-hidden active:border-orange-500/50 mb-3"
+      >
+        {/* Avatar */}
+        <View className="p-3 justify-center">
+          {channel.avatarUrl ? (
+            <Image
+              source={{ uri: channel.avatarUrl }}
+              className="w-16 h-16 rounded-full"
+            />
+          ) : (
+            <View className="w-16 h-16 rounded-full bg-orange-500 items-center justify-center">
+              <Text className="text-white font-bold text-xl">
+                {getInitial(channel.name)}
+              </Text>
+            </View>
+          )}
+          {/* Featured Badge */}
+          {channel.isFeatured && (
+            <View className="absolute top-1 left-1 bg-orange-500 p-1 rounded-full">
+              <Star size={10} color="#fff" fill="#fff" />
+            </View>
+          )}
+        </View>
+
+        {/* Content */}
+        <View className="flex-1 py-3 pr-3 justify-center">
+          {/* Name and Category Row */}
+          <View className="flex-row items-center gap-2">
+            <Text className="font-bold text-stone-900 dark:text-white text-base flex-1" numberOfLines={1}>
+              {channel.name}
+            </Text>
+            <View
+              className={`px-2 py-0.5 rounded-full ${getCategoryColor(channel.category)}`}
+            >
+              <Text className="text-[10px] font-medium">{channel.category}</Text>
+            </View>
+          </View>
+
+          {/* Description */}
+          <Text className="text-stone-500 dark:text-stone-400 text-sm mt-1" numberOfLines={2}>
+            {channel.description}
+          </Text>
+
+          {/* Stats Row */}
+          <View className="flex-row items-center gap-4 mt-2">
+            <View className="flex-row items-center gap-1">
+              <Users size={12} color="#78716c" />
+              <Text className="text-stone-500 text-xs">
+                {formatSubscriberCount(channel.subscriberCount)} subscribers
+              </Text>
+            </View>
+            {channel.videoCount > 0 && (
+              <View className="flex-row items-center gap-1">
+                <Video size={12} color="#78716c" />
+                <Text className="text-stone-500 text-xs">
+                  {channel.videoCount} videos
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Follow Button */}
+        <View className="justify-center pr-3">
+          <Pressable
+            onPress={handleFollowPress}
+            className={`px-3 py-2 rounded-full ${
+              channel.isFollowing
+                ? "bg-stone-200 dark:bg-stone-700 active:bg-stone-300 dark:active:bg-stone-600"
+                : "bg-orange-500 active:bg-orange-600"
+            }`}
+          >
+            {channel.isFollowing ? (
+              <Check size={16} color="#78716c" />
+            ) : (
+              <Text className="text-white text-xs font-semibold">Follow</Text>
+            )}
+          </Pressable>
+        </View>
+      </Pressable>
+    );
+  }
+
+  // Grid view layout (default) - vertical card
   return (
     <Pressable
       onPress={onPress}
-      className="bg-stone-900 rounded-2xl border border-stone-800 overflow-hidden active:border-orange-500/50"
+      className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 overflow-hidden active:border-orange-500/50"
     >
       {/* Recent Videos Thumbnails - 3 stacked */}
-      <View className="h-24 bg-stone-800 flex-row">
+      <View className="h-24 bg-stone-100 dark:bg-stone-800 flex-row">
         {channel.recentVideos?.slice(0, 3).map((video, idx) => (
           <View
             key={video.videoId}
@@ -98,7 +189,7 @@ export function ChannelCard({
           Array(3 - (channel.recentVideos?.length || 0))
             .fill(0)
             .map((_, idx) => (
-              <View key={`empty-${idx}`} className="flex-1 bg-stone-700" />
+              <View key={`empty-${idx}`} className="flex-1 bg-stone-200 dark:bg-stone-700" />
             ))}
 
         {/* Featured Badge */}
@@ -132,7 +223,7 @@ export function ChannelCard({
           {/* Name and Stats */}
           <View className="flex-1">
             <Text
-              className="font-bold text-white"
+              className="font-bold text-stone-900 dark:text-white"
               numberOfLines={1}
             >
               {channel.name}
@@ -145,7 +236,7 @@ export function ChannelCard({
 
         {/* Description */}
         <Text
-          className="text-stone-400 text-sm mt-3"
+          className="text-stone-500 dark:text-stone-400 text-sm mt-3"
           numberOfLines={2}
         >
           {channel.description}
@@ -166,14 +257,14 @@ export function ChannelCard({
             onPress={handleFollowPress}
             className={`px-4 py-1.5 rounded-full ${
               channel.isFollowing
-                ? "bg-stone-700 active:bg-stone-600"
+                ? "bg-stone-200 dark:bg-stone-700 active:bg-stone-300 dark:active:bg-stone-600"
                 : "bg-orange-500 active:bg-orange-600"
             }`}
           >
             {channel.isFollowing ? (
               <View className="flex-row items-center gap-1">
-                <Check size={14} color="#a8a29e" />
-                <Text className="text-stone-300 text-sm font-semibold">
+                <Check size={14} color="#78716c" />
+                <Text className="text-stone-600 dark:text-stone-300 text-sm font-semibold">
                   Following
                 </Text>
               </View>

@@ -32,6 +32,7 @@ export interface YouTubeChannelData {
   channelId: string;
   name: string;
   avatarUrl: string;
+  bannerUrl?: string;
   subscriberCount: number;
   description: string;
   videoCount: number;

@@ -35,6 +35,11 @@ interface YouTubeChannelResponse {
       viewCount: string;
       hiddenSubscriberCount: boolean;
     };
+    brandingSettings?: {
+      image?: {
+        bannerExternalUrl?: string;
+      };
+    };
   }[];
   error?: {
     code: number;
@@ -86,7 +91,7 @@ export const fetchChannelData = action({
     try {
       const url = new URL("https://www.googleapis.com/youtube/v3/channels");
       url.searchParams.set("id", channelId);
-      url.searchParams.set("part", "snippet,statistics");
+      url.searchParams.set("part", "snippet,statistics,brandingSettings");
       url.searchParams.set("key", apiKey);
 
       const controller = new AbortController();
@@ -153,6 +158,7 @@ export const fetchChannelData = action({
           channel.snippet.thumbnails.medium?.url ||
           channel.snippet.thumbnails.default?.url ||
           "",
+        bannerUrl: channel.brandingSettings?.image?.bannerExternalUrl || "",
         subscriberCount: channel.statistics.hiddenSubscriberCount
           ? 0
           : parseInt(channel.statistics.subscriberCount || "0", 10),
@@ -294,10 +300,10 @@ export const searchChannels = action({
         (item: { snippet: { channelId: string } }) => item.snippet.channelId
       );
 
-      // Fetch full channel details
+      // Fetch full channel details including banner
       const channelsUrl = new URL("https://www.googleapis.com/youtube/v3/channels");
       channelsUrl.searchParams.set("id", channelIds.join(","));
-      channelsUrl.searchParams.set("part", "snippet,statistics");
+      channelsUrl.searchParams.set("part", "snippet,statistics,brandingSettings");
       channelsUrl.searchParams.set("key", apiKey);
 
       const channelsResponse = await fetch(channelsUrl.toString(), {
@@ -332,6 +338,7 @@ export const searchChannels = action({
           channel.snippet.thumbnails.medium?.url ||
           channel.snippet.thumbnails.default?.url ||
           "",
+        bannerUrl: channel.brandingSettings?.image?.bannerExternalUrl || "",
         subscriberCount: channel.statistics.hiddenSubscriberCount
           ? 0
           : parseInt(channel.statistics.subscriberCount || "0", 10),

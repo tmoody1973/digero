@@ -3,9 +3,10 @@
  *
  * Handles subscription-related operations including:
  * - Free tier limit enforcement (10 recipes, 3 scans per 30 days)
- * - Premium status checks
+ * - Premium status checks (plus or creator tiers)
  * - Scan history tracking
  * - User subscription status updates (via webhooks)
+ * - Member discount rate calculation
  */
 
 import { v } from "convex/values";
@@ -24,27 +25,70 @@ export const FREE_SCAN_LIMIT = 3;
 /** Rolling window period in milliseconds (30 days) */
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+/** Member discount rate for Plus and Creator tiers (percentage) */
+export const MEMBER_DISCOUNT_RATE = 15;
+
 // =============================================================================
 // Type Definitions
 // =============================================================================
 
 /**
  * Subscription status types
+ * - free: Basic users with limits
+ * - plus: Paid subscribers ($4.99/mo or $49.99/yr)
+ * - creator: Higher-tier subscribers ($9.99/mo or $89.99/yr) with extra benefits
+ * - trial: Users in trial period (treated as plus for access)
  */
-const subscriptionStatusValidator = v.union(
+export const subscriptionStatusValidator = v.union(
   v.literal("free"),
-  v.literal("premium"),
+  v.literal("plus"),
+  v.literal("creator"),
   v.literal("trial")
 );
 
 /**
  * Subscription type validator
  */
-const subscriptionTypeValidator = v.union(
+export const subscriptionTypeValidator = v.union(
   v.literal("monthly"),
   v.literal("annual"),
   v.literal("lifetime")
 );
+
+/**
+ * Type alias for subscription status
+ */
+export type SubscriptionStatus = "free" | "plus" | "creator" | "trial";
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+/**
+ * Check if a subscription status grants premium access
+ * Plus, Creator, and Trial users all have premium access
+ */
+export function hasPremiumAccess(status: string | undefined): boolean {
+  return status === "plus" || status === "creator" || status === "trial";
+}
+
+/**
+ * Check if a subscription status is creator tier
+ */
+export function hasCreatorAccess(status: string | undefined): boolean {
+  return status === "creator";
+}
+
+/**
+ * Get the member discount rate based on subscription status
+ * Returns 15 for plus/creator tiers, 0 for free
+ */
+export function getMemberDiscountRateForStatus(status: string | undefined): number {
+  if (status === "plus" || status === "creator") {
+    return MEMBER_DISCOUNT_RATE;
+  }
+  return 0;
+}
 
 // =============================================================================
 // QUERIES
@@ -88,7 +132,7 @@ export const getSubscriptionStatus = query({
 /**
  * Check if user has premium access
  *
- * Returns true if user has active premium or trial subscription.
+ * Returns true if user has active plus, creator, or trial subscription.
  * Used for quick entitlement checks.
  */
 export const isPremium = query({
@@ -111,7 +155,71 @@ export const isPremium = query({
     }
 
     const status = user.subscriptionStatus ?? "free";
-    return status === "premium" || status === "trial";
+    return hasPremiumAccess(status);
+  },
+});
+
+/**
+ * Check if user has creator tier
+ *
+ * Returns true if user has active creator subscription.
+ * Used for creator-specific features.
+ */
+export const isCreatorTier = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return false;
+    }
+
+    const clerkId = identity.subject;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .unique();
+
+    if (!user) {
+      return false;
+    }
+
+    return hasCreatorAccess(user.subscriptionStatus);
+  },
+});
+
+/**
+ * Get member discount rate for the current user
+ *
+ * Returns the discount percentage (0, 15) based on subscription tier.
+ * Plus and Creator tier users get 15% discount on creator shop products.
+ */
+export const getMemberDiscountRate = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { discountRate: 0, tier: "free" as const };
+    }
+
+    const clerkId = identity.subject;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .unique();
+
+    if (!user) {
+      return { discountRate: 0, tier: "free" as const };
+    }
+
+    const status = (user.subscriptionStatus ?? "free") as SubscriptionStatus;
+    const discountRate = getMemberDiscountRateForStatus(status);
+
+    return {
+      discountRate,
+      tier: status,
+    };
   },
 });
 
@@ -212,9 +320,9 @@ export const getUsageStats = query({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
 
-    const isPremiumUser =
-      user?.subscriptionStatus === "premium" ||
-      user?.subscriptionStatus === "trial";
+    const status = user?.subscriptionStatus ?? "free";
+    const isPremiumUser = hasPremiumAccess(status);
+    const isCreatorUser = hasCreatorAccess(status);
 
     // Get recipe count
     const recipes = await ctx.db
@@ -243,6 +351,9 @@ export const getUsageStats = query({
 
     return {
       isPremium: isPremiumUser,
+      isCreator: isCreatorUser,
+      tier: status,
+      memberDiscountRate: getMemberDiscountRateForStatus(status),
       recipes: {
         currentCount: recipes.length,
         limit: isPremiumUser ? null : FREE_RECIPE_LIMIT,
@@ -289,11 +400,8 @@ export const checkRecipeLimit = query({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
 
-    // Premium users always allowed
-    if (
-      user?.subscriptionStatus === "premium" ||
-      user?.subscriptionStatus === "trial"
-    ) {
+    // Premium users (plus, creator, trial) always allowed
+    if (hasPremiumAccess(user?.subscriptionStatus)) {
       return { allowed: true };
     }
 
@@ -345,11 +453,8 @@ export const checkScanLimit = query({
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
 
-    // Premium users always allowed
-    if (
-      user?.subscriptionStatus === "premium" ||
-      user?.subscriptionStatus === "trial"
-    ) {
+    // Premium users (plus, creator, trial) always allowed
+    if (hasPremiumAccess(user?.subscriptionStatus)) {
       return { allowed: true };
     }
 

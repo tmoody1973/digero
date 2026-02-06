@@ -20,6 +20,7 @@ import { useSignUp, useOAuth } from "@clerk/clerk-expo";
 import { OAuthButton } from "@/components/auth/OAuthButton";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthInput } from "@/components/auth/AuthInput";
+import { DigeroLogo } from "@/components/brand";
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -228,10 +229,8 @@ export default function SignUpScreen() {
       >
         {/* Logo and Title */}
         <View className="items-center mb-10">
-          <Text className="text-3xl font-bold text-orange-500 mb-2">
-            Digero
-          </Text>
-          <Text className="text-lg text-stone-600 dark:text-stone-400">
+          <DigeroLogo width={140} height={62} />
+          <Text className="text-lg text-stone-600 dark:text-stone-400 mt-3">
             Create your account
           </Text>
         </View>

@@ -5,6 +5,9 @@
  * Uses react-native-gifted-chat for chat UI and Convex for real-time messaging.
  * Integrates with Gemini 2.0 Flash for recipe suggestions.
  * Supports chat sessions, image attachments, and voice input.
+ *
+ * Free tier: 5 messages per day
+ * Plus/Creator tier: Unlimited messages
  */
 
 import { useState, useCallback, useMemo, useEffect } from "react";
@@ -31,9 +34,13 @@ import {
   MessageSquare,
   Trash2,
   X,
+  Sparkles,
+  Lock,
 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import { createRenderCustomView, ChatInputToolbar } from "@/components/chat";
+import { useAIChatLimit } from "@/hooks/useAIChatLimit";
+import { PaywallModal } from "@/components/subscription/PaywallModal";
 
 /**
  * Extended message type with custom properties for recipe data
@@ -66,6 +73,20 @@ export default function AIChatScreen() {
 
   // Local state
   const [isTyping, setIsTyping] = useState(false);
+
+  // Paywall state
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  // AI Chat limit tracking
+  const {
+    canSend,
+    isUnlimited,
+    remaining,
+    limit,
+    remainingDisplay,
+    shouldShowUpgradePrompt,
+    checkAndIncrement,
+  } = useAIChatLimit();
 
   // Convex queries and mutations
   const sessions = useQuery(api.aiChat.getSessions);
@@ -167,9 +188,9 @@ export default function AIChatScreen() {
         await deleteSession({ sessionId });
         // If deleted current session, select another or create new
         if (sessionId === currentSessionId) {
-          const remaining = sessions?.filter((s) => s._id !== sessionId) ?? [];
-          if (remaining.length > 0) {
-            setCurrentSessionId(remaining[0]._id);
+          const remainingSessions = sessions?.filter((s) => s._id !== sessionId) ?? [];
+          if (remainingSessions.length > 0) {
+            setCurrentSessionId(remainingSessions[0]._id);
           } else {
             setCurrentSessionId(null);
           }
@@ -186,6 +207,22 @@ export default function AIChatScreen() {
     async (text: string, imageBase64: string | null) => {
       if (!currentSessionId) return;
       if (!text.trim() && !imageBase64) return;
+
+      // Check usage limit for free users
+      if (!isUnlimited) {
+        const result = await checkAndIncrement();
+        if (!result.success) {
+          // Limit reached, show paywall
+          setShowPaywall(true);
+          return;
+        }
+
+        // Show upgrade prompt at 80% usage (4/5 messages)
+        if (result.usage?.shouldShowUpgradePrompt) {
+          // OneSignal in-app message trigger would go here
+          // For now, we just show the banner in the UI
+        }
+      }
 
       try {
         // Save user message to Convex
@@ -239,7 +276,7 @@ export default function AIChatScreen() {
         }
       }
     },
-    [currentSessionId, sendMessage, generateRecipe, saveAiResponse, conversationHistory]
+    [currentSessionId, sendMessage, generateRecipe, saveAiResponse, conversationHistory, isUnlimited, checkAndIncrement]
   );
 
   // Handle GiftedChat onSend
@@ -320,9 +357,10 @@ export default function AIChatScreen() {
         onSendWithImage={handleSendWithImage}
         onVoiceTranscription={handleVoiceTranscription}
         isAiTyping={isTyping}
+        disabled={!canSend && !isUnlimited}
       />
     ),
-    [isDark, handleSendWithImage, handleVoiceTranscription, isTyping]
+    [isDark, handleSendWithImage, handleVoiceTranscription, isTyping, canSend, isUnlimited]
   );
 
   // Format date for session list
@@ -374,6 +412,26 @@ export default function AIChatScreen() {
           </View>
 
           <View className="flex-row items-center gap-2">
+            {/* Message Limit Badge (Free users only) */}
+            {!isUnlimited && (
+              <View className="flex-row items-center gap-1 rounded-full bg-stone-100 px-3 py-1.5 dark:bg-stone-800">
+                <MessageSquare size={14} color={isDark ? "#a8a29e" : "#78716c"} />
+                <Text className="text-xs font-medium text-stone-600 dark:text-stone-400">
+                  {remaining}/{limit}
+                </Text>
+              </View>
+            )}
+
+            {/* Unlimited Badge (Plus/Creator users) */}
+            {isUnlimited && (
+              <View className="flex-row items-center gap-1 rounded-full bg-orange-100 px-3 py-1.5 dark:bg-orange-900/30">
+                <Sparkles size={14} color="#f97316" />
+                <Text className="text-xs font-medium text-orange-600 dark:text-orange-400">
+                  Unlimited
+                </Text>
+              </View>
+            )}
+
             {/* New Chat Button */}
             <Pressable
               onPress={handleNewChat}
@@ -396,6 +454,24 @@ export default function AIChatScreen() {
           </View>
         </View>
       </View>
+
+      {/* Upgrade Prompt Banner (when at 80% usage) */}
+      {shouldShowUpgradePrompt && !isUnlimited && (
+        <Pressable
+          onPress={() => setShowPaywall(true)}
+          className="flex-row items-center justify-between bg-orange-50 px-4 py-3 dark:bg-orange-950/30"
+        >
+          <View className="flex-row items-center gap-2">
+            <Sparkles size={16} color="#f97316" />
+            <Text className="text-sm text-orange-700 dark:text-orange-400">
+              Running low! Upgrade for unlimited Sous Chef.
+            </Text>
+          </View>
+          <Text className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+            Upgrade
+          </Text>
+        </Pressable>
+      )}
 
       {/* Chat Interface */}
       <KeyboardAvoidingView
@@ -438,6 +514,31 @@ export default function AIChatScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
+
+      {/* Limit Reached Overlay (when at 0 messages) */}
+      {!canSend && !isUnlimited && (
+        <View className="absolute bottom-0 left-0 right-0 border-t border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
+          <View className="flex-row items-center gap-3">
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800">
+              <Lock size={24} color={isDark ? "#78716c" : "#a8a29e"} />
+            </View>
+            <View className="flex-1">
+              <Text className="font-semibold text-stone-900 dark:text-white">
+                Daily limit reached
+              </Text>
+              <Text className="text-sm text-stone-500 dark:text-stone-400">
+                Upgrade to Plus for unlimited Sous Chef
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setShowPaywall(true)}
+              className="rounded-xl bg-orange-500 px-4 py-2 active:bg-orange-600"
+            >
+              <Text className="font-semibold text-white">Upgrade</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* History Modal */}
       <Modal
@@ -536,6 +637,15 @@ export default function AIChatScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        visible={showPaywall}
+        trigger="AI_CHAT_LIMIT_EXCEEDED"
+        customMessage="Upgrade to Plus for unlimited Sous Chef"
+        onDismiss={() => setShowPaywall(false)}
+        onPurchaseSuccess={() => setShowPaywall(false)}
+      />
     </View>
   );
 }

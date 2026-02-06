@@ -56,6 +56,7 @@ export interface ChannelData {
   youtubeChannelId: string;
   name: string;
   avatarUrl: string;
+  bannerUrl?: string;
   subscriberCount: number;
   description: string;
   videoCount: number;
@@ -138,16 +139,23 @@ export interface ExtractionState {
  */
 export interface ChannelCardProps {
   channel: ChannelData;
+  viewMode?: FeedViewMode;
   onPress?: () => void;
   onFollow?: () => void;
   onUnfollow?: () => void;
 }
 
 /**
+ * Feed view mode (grid vs list for video feed)
+ */
+export type FeedViewMode = "grid" | "list";
+
+/**
  * Props for VideoCard component
  */
 export interface VideoCardProps {
   video: FeedVideoData;
+  viewMode?: FeedViewMode;
   onPress?: () => void;
   onSaveRecipe?: () => void;
 }

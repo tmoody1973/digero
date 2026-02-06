@@ -3,6 +3,7 @@
  *
  * Displays a color-coded badge indicating the recipe source.
  * Supports full (icon + label) and compact (icon only) variants.
+ * Can optionally show creator/website name for attribution.
  */
 
 import { View, Text } from "react-native";
@@ -12,6 +13,8 @@ type RecipeSource = "youtube" | "website" | "scanned" | "manual" | "ai_generated
 
 interface SourceBadgeProps {
   source: RecipeSource;
+  /** Creator name (YouTube channel) or website domain */
+  sourceName?: string;
   compact?: boolean;
 }
 
@@ -55,9 +58,16 @@ const sourceConfig: Record<RecipeSource, SourceConfig> = {
   },
 };
 
-export function SourceBadge({ source, compact = false }: SourceBadgeProps) {
+export function SourceBadge({ source, sourceName, compact = false }: SourceBadgeProps) {
   const config = sourceConfig[source];
   const Icon = config.icon;
+
+  // Determine display label - use sourceName if provided, otherwise default label
+  const displayLabel = sourceName || config.label;
+  // Truncate long names for display
+  const truncatedLabel = displayLabel.length > 20
+    ? displayLabel.substring(0, 18) + "..."
+    : displayLabel;
 
   if (compact) {
     return (
@@ -75,7 +85,7 @@ export function SourceBadge({ source, compact = false }: SourceBadgeProps) {
     >
       <Icon className={`h-3.5 w-3.5 ${config.textColor}`} />
       <Text className={`text-xs font-medium ${config.textColor}`}>
-        {config.label}
+        {truncatedLabel}
       </Text>
     </View>
   );

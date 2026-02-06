@@ -3,6 +3,7 @@
  *
  * CRUD operations for managing YouTube channels and user follows.
  * Provides queries for channel discovery, following status, and video feed.
+ * Includes OneSignal tag sync support for followed creators.
  */
 
 import { v } from "convex/values";
@@ -30,12 +31,16 @@ const channelCategory = v.union(
  *
  * Creates or finds the channel in the database and adds a follow relationship.
  * If the channel doesn't exist, it's created with the provided data.
+ *
+ * Returns the channel ID, following status, and list of all followed channel IDs
+ * for OneSignal tag sync.
  */
 export const followChannel = mutation({
   args: {
     youtubeChannelId: v.string(),
     name: v.string(),
     avatarUrl: v.string(),
+    bannerUrl: v.optional(v.string()),
     subscriberCount: v.number(),
     description: v.string(),
     videoCount: v.number(),
@@ -65,6 +70,7 @@ export const followChannel = mutation({
         youtubeChannelId: args.youtubeChannelId,
         name: args.name,
         avatarUrl: args.avatarUrl,
+        bannerUrl: args.bannerUrl,
         subscriberCount: args.subscriberCount,
         description: args.description,
         videoCount: args.videoCount,
@@ -75,6 +81,9 @@ export const followChannel = mutation({
         updatedAt: now,
       });
       channel = await ctx.db.get(channelId);
+    } else if (args.bannerUrl && !channel.bannerUrl) {
+      // Update existing channel with banner if it doesn't have one
+      await ctx.db.patch(channel._id, { bannerUrl: args.bannerUrl });
     }
 
     if (!channel) {
@@ -89,19 +98,23 @@ export const followChannel = mutation({
       )
       .first();
 
-    if (existingFollow) {
-      // Already following
-      return { channelId: channel._id, isFollowing: true };
+    if (!existingFollow) {
+      // Create follow relationship
+      await ctx.db.insert("userFollowedChannels", {
+        userId,
+        channelId: channel._id,
+        followedAt: now,
+      });
     }
 
-    // Create follow relationship
-    await ctx.db.insert("userFollowedChannels", {
-      userId,
-      channelId: channel._id,
-      followedAt: now,
-    });
+    // Get all followed channel IDs for OneSignal tag sync
+    const followedChannelIds = await getFollowedChannelYoutubeIds(ctx, userId);
 
-    return { channelId: channel._id, isFollowing: true };
+    return {
+      channelId: channel._id,
+      isFollowing: true,
+      followedChannelIds, // For OneSignal tag sync
+    };
   },
 });
 
@@ -109,6 +122,7 @@ export const followChannel = mutation({
  * Unfollow a YouTube channel
  *
  * Removes the follow relationship between user and channel.
+ * Returns the updated list of followed channel IDs for OneSignal tag sync.
  */
 export const unfollowChannel = mutation({
   args: {
@@ -135,7 +149,72 @@ export const unfollowChannel = mutation({
       await ctx.db.delete(follow._id);
     }
 
-    return { channelId: args.channelId, isFollowing: false };
+    // Get all followed channel IDs for OneSignal tag sync
+    const followedChannelIds = await getFollowedChannelYoutubeIds(ctx, userId);
+
+    return {
+      channelId: args.channelId,
+      isFollowing: false,
+      followedChannelIds, // For OneSignal tag sync
+    };
+  },
+});
+
+/**
+ * Helper function to get all YouTube channel IDs the user follows
+ *
+ * Used for OneSignal followed_creators tag sync.
+ */
+async function getFollowedChannelYoutubeIds(
+  ctx: { db: any },
+  userId: string
+): Promise<string[]> {
+  const follows = await ctx.db
+    .query("userFollowedChannels")
+    .withIndex("by_user", (q: any) => q.eq("userId", userId))
+    .collect();
+
+  const channelIds: string[] = [];
+  for (const follow of follows) {
+    const channel = await ctx.db.get(follow.channelId);
+    if (channel?.youtubeChannelId) {
+      channelIds.push(channel.youtubeChannelId);
+    }
+  }
+
+  return channelIds;
+}
+
+/**
+ * Update a channel's banner URL
+ *
+ * Used to add banner images to channels that don't have them.
+ */
+export const updateChannelBanner = mutation({
+  args: {
+    youtubeChannelId: v.string(),
+    bannerUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Find the channel
+    const channel = await ctx.db
+      .query("youtubeChannels")
+      .withIndex("by_youtube_channel_id", (q) =>
+        q.eq("youtubeChannelId", args.youtubeChannelId)
+      )
+      .first();
+
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
+
+    // Update the banner URL
+    await ctx.db.patch(channel._id, {
+      bannerUrl: args.bannerUrl,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
   },
 });
 
@@ -278,6 +357,62 @@ export const getFollowedChannels = query({
     );
 
     return channels.filter((c): c is NonNullable<typeof c> => c !== null);
+  },
+});
+
+/**
+ * Get followed channel YouTube IDs
+ *
+ * Returns only the YouTube channel IDs for all followed channels.
+ * Used for OneSignal followed_creators tag sync.
+ */
+export const getFollowedChannelIds = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    const userId = identity.subject;
+
+    // Get follow relationships
+    const follows = await ctx.db
+      .query("userFollowedChannels")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    // Fetch YouTube channel IDs
+    const channelIds: string[] = [];
+    for (const follow of follows) {
+      const channel = await ctx.db.get(follow.channelId);
+      if (channel?.youtubeChannelId) {
+        channelIds.push(channel.youtubeChannelId);
+      }
+    }
+
+    return channelIds;
+  },
+});
+
+/**
+ * Check featured channels (public, no auth required)
+ *
+ * Returns list of featured channel names for debugging.
+ */
+export const checkFeaturedChannels = query({
+  args: {},
+  handler: async (ctx) => {
+    const channels = await ctx.db
+      .query("youtubeChannels")
+      .withIndex("by_featured", (q) => q.eq("isFeatured", true))
+      .collect();
+
+    return channels.map((c) => ({
+      name: c.name,
+      youtubeChannelId: c.youtubeChannelId,
+      isFeatured: c.isFeatured,
+    }));
   },
 });
 
@@ -644,5 +779,91 @@ export const getVideoFeed = query({
       nextCursor: hasMore ? String(startIndex + limit) : null,
       hasMore,
     };
+  },
+});
+
+/**
+ * List all channels (admin use only, no auth required)
+ *
+ * Used to find and clean up duplicate channels.
+ */
+export const listAllChannelsAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const channels = await ctx.db.query("youtubeChannels").collect();
+    return channels.map((c) => ({
+      _id: c._id,
+      name: c.name,
+      youtubeChannelId: c.youtubeChannelId,
+      subscriberCount: c.subscriberCount,
+      avatarUrl: c.avatarUrl,
+    }));
+  },
+});
+
+/**
+ * Delete a channel by ID (admin use only)
+ *
+ * Used to clean up duplicate channels.
+ */
+export const deleteChannel = mutation({
+  args: {
+    channelId: v.id("youtubeChannels"),
+  },
+  handler: async (ctx, args) => {
+    // Delete the channel
+    await ctx.db.delete(args.channelId);
+    return { success: true };
+  },
+});
+
+/**
+ * Add a channel (admin use only, no auth required)
+ *
+ * Used to add channels for seeding/admin purposes.
+ */
+export const addChannel = mutation({
+  args: {
+    youtubeChannelId: v.string(),
+    name: v.string(),
+    avatarUrl: v.string(),
+    bannerUrl: v.optional(v.string()),
+    subscriberCount: v.number(),
+    description: v.string(),
+    videoCount: v.number(),
+    category: v.optional(channelCategory),
+    isFeatured: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    // Check if channel already exists
+    const existing = await ctx.db
+      .query("youtubeChannels")
+      .withIndex("by_youtube_channel_id", (q) =>
+        q.eq("youtubeChannelId", args.youtubeChannelId)
+      )
+      .first();
+
+    if (existing) {
+      return { success: false, error: "Channel already exists", channelId: existing._id };
+    }
+
+    const channelId = await ctx.db.insert("youtubeChannels", {
+      youtubeChannelId: args.youtubeChannelId,
+      name: args.name,
+      avatarUrl: args.avatarUrl,
+      bannerUrl: args.bannerUrl || "",
+      subscriberCount: args.subscriberCount,
+      description: args.description,
+      videoCount: args.videoCount,
+      category: args.category || "General",
+      isFeatured: args.isFeatured || false,
+      lastFetchedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return { success: true, channelId };
   },
 });

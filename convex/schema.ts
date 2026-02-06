@@ -4,7 +4,7 @@
  * Defines the database schema for Digero's recipe management system.
  * Includes tables for users, recipes, physical cookbooks, digital cookbooks,
  * scan sessions, meal planner, shopping lists, YouTube channels,
- * AI chat messages, and subscription tracking with proper indexing for efficient queries.
+ * AI chat messages, subscription tracking, and creator economy features.
  */
 
 import { defineSchema, defineTable } from "convex/server";
@@ -22,11 +22,16 @@ const cookingSkillLevel = v.union(
 
 /**
  * Subscription status validator
- * 3-value union for tracking user subscription state
+ * 4-value union for tracking user subscription state
+ * - free: Basic users with limits
+ * - plus: Paid subscribers ($4.99/mo or $49.99/yr)
+ * - creator: Higher-tier subscribers ($9.99/mo or $89.99/yr) with extra benefits
+ * - trial: Users in trial period (treated as plus for access)
  */
 const subscriptionStatus = v.union(
   v.literal("free"),
-  v.literal("premium"),
+  v.literal("plus"),
+  v.literal("creator"),
   v.literal("trial")
 );
 
@@ -156,6 +161,64 @@ const chatRole = v.union(
 );
 
 /**
+ * Creator partnership tier validator
+ */
+const creatorTier = v.union(
+  v.literal("emerging"),    // 10K+ YT subs - standard share
+  v.literal("established"), // 100K+ YT subs - 1.2x multiplier
+  v.literal("partner")      // 500K+ YT subs - 1.5x multiplier
+);
+
+/**
+ * Creator application status validator
+ */
+const applicationStatus = v.union(
+  v.literal("pending"),
+  v.literal("approved"),
+  v.literal("rejected")
+);
+
+/**
+ * Creator product type validator
+ */
+const productType = v.union(
+  v.literal("cookbook"),
+  v.literal("course"),
+  v.literal("merchandise"),
+  v.literal("subscription"),
+  v.literal("equipment")
+);
+
+/**
+ * Creator order status validator
+ */
+const orderStatus = v.union(
+  v.literal("pending"),
+  v.literal("paid"),
+  v.literal("fulfilled"),
+  v.literal("refunded"),
+  v.literal("cancelled")
+);
+
+/**
+ * Creator payout status validator
+ */
+const payoutStatus = v.union(
+  v.literal("pending"),
+  v.literal("processing"),
+  v.literal("paid"),
+  v.literal("failed")
+);
+
+/**
+ * Creator message status validator
+ */
+const messageStatus = v.union(
+  v.literal("sent"),
+  v.literal("failed")
+);
+
+/**
  * Ingredient object structure
  * Supports structured storage for shopping list generation
  */
@@ -211,6 +274,9 @@ export default defineSchema({
     hasBillingIssue: v.optional(v.boolean()),
     revenuecatUserId: v.optional(v.string()),
 
+    // OneSignal player ID for push notifications
+    onesignalPlayerId: v.optional(v.string()),
+
     // Timestamps (Unix milliseconds)
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -253,6 +319,8 @@ export default defineSchema({
     source: recipeSource,
     sourceUrl: v.optional(v.string()),
     youtubeVideoId: v.optional(v.string()),
+    // Creator attribution - channel name for YouTube, domain for websites
+    sourceName: v.optional(v.string()),
     imageUrl: v.string(),
 
     // Timing information (in minutes)
@@ -691,4 +759,360 @@ export default defineSchema({
     .index("by_session_created", ["sessionId", "createdAt"])
     // Index for cleanup cron job (messages older than 30 days)
     .index("by_created", ["createdAt"]),
+
+  /**
+   * AI Chat Usage Table
+   *
+   * Tracks daily Sous Chef AI chat message usage for free tier limits.
+   * Free users are limited to 5 messages per day.
+   * Uses date-based queries for efficient daily tracking.
+   */
+  aiChatUsage: defineTable({
+    // User relationship - Clerk user ID for multi-tenancy
+    userId: v.string(),
+
+    // Date string in YYYY-MM-DD format for daily tracking
+    date: v.string(),
+
+    // Number of messages sent on this date
+    messageCount: v.number(),
+  })
+    // Index for fetching user's usage by date
+    .index("by_user_date", ["userId", "date"])
+    // Index for fetching all usage for a user
+    .index("by_user", ["userId"]),
+
+  // =============================================================================
+  // Creator Economy Tables
+  // =============================================================================
+
+  /**
+   * Creator Profiles Table
+   *
+   * Stores creator partnership information.
+   * Creators are YouTube cooking channels that have applied and been approved.
+   */
+  creatorProfiles: defineTable({
+    // User relationship - creators must have a Digero account
+    userId: v.string(),
+
+    // YouTube channel information
+    youtubeChannelId: v.string(),
+    channelName: v.string(),
+    channelAvatarUrl: v.string(),
+    channelBannerUrl: v.optional(v.string()),
+    subscriberCount: v.number(),
+
+    // Partnership details
+    tier: creatorTier,
+    applicationStatus: applicationStatus,
+    appliedAt: v.number(),
+    approvedAt: v.optional(v.number()),
+
+    // Payout information
+    payoutEmail: v.optional(v.string()),
+    stripeConnectId: v.optional(v.string()),
+    paypalEmail: v.optional(v.string()),
+
+    // Profile customization
+    bio: v.optional(v.string()),
+    specialties: v.array(v.string()),
+    socialLinks: v.optional(v.object({
+      instagram: v.optional(v.string()),
+      tiktok: v.optional(v.string()),
+      website: v.optional(v.string()),
+    })),
+
+    // RES multiplier based on tier
+    resMultiplier: v.number(),
+
+    // Stats (denormalized for dashboard)
+    totalRecipes: v.number(),
+    totalFollowers: v.number(),
+    totalEarnings: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_youtube_channel", ["youtubeChannelId"])
+    .index("by_tier", ["tier"])
+    .index("by_status", ["applicationStatus"]),
+
+  /**
+   * Creator Products Table
+   *
+   * Stores products that creators sell through their shop.
+   */
+  creatorProducts: defineTable({
+    // Creator relationship
+    creatorId: v.id("creatorProfiles"),
+
+    // Product information
+    name: v.string(),
+    description: v.string(),
+    type: productType,
+    imageUrl: v.string(),
+    additionalImages: v.array(v.string()),
+
+    // Pricing
+    price: v.number(), // In cents
+    currency: v.string(),
+    memberDiscount: v.number(), // Percentage discount for Plus/Creator tier
+
+    // Digital product details
+    digitalAssetUrl: v.optional(v.string()),
+    externalUrl: v.optional(v.string()),
+
+    // Physical product details
+    requiresShipping: v.boolean(),
+    shippingCost: v.optional(v.number()),
+
+    // Inventory
+    inventory: v.optional(v.number()),
+    trackInventory: v.boolean(),
+
+    // Status
+    isActive: v.boolean(),
+    isFeatured: v.boolean(),
+
+    // Sales stats (denormalized)
+    totalSales: v.number(),
+    totalRevenue: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_creator", ["creatorId"])
+    .index("by_type", ["type"])
+    .index("by_featured", ["isFeatured", "isActive"])
+    .index("by_creator_active", ["creatorId", "isActive"]),
+
+  /**
+   * Creator Orders Table
+   *
+   * Tracks purchases from creator shops.
+   */
+  creatorOrders: defineTable({
+    // Order parties
+    buyerId: v.string(),
+    creatorId: v.id("creatorProfiles"),
+    productId: v.id("creatorProducts"),
+
+    // Order details
+    quantity: v.number(),
+    unitPrice: v.number(),
+    discountApplied: v.number(),
+    subtotal: v.number(),
+    shippingCost: v.number(),
+    total: v.number(),
+
+    // Payment tracking
+    stripePaymentIntentId: v.optional(v.string()),
+    revenuecatTransactionId: v.optional(v.string()),
+    status: orderStatus,
+
+    // Shipping info (for physical products)
+    shippingAddress: v.optional(v.object({
+      name: v.string(),
+      line1: v.string(),
+      line2: v.optional(v.string()),
+      city: v.string(),
+      state: v.string(),
+      postalCode: v.string(),
+      country: v.string(),
+    })),
+
+    // Digital delivery
+    downloadUrl: v.optional(v.string()),
+    downloadExpiresAt: v.optional(v.number()),
+
+    // Commission tracking (50% to creator)
+    creatorCommission: v.number(),
+    platformFee: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    paidAt: v.optional(v.number()),
+    fulfilledAt: v.optional(v.number()),
+  })
+    .index("by_buyer", ["buyerId"])
+    .index("by_creator", ["creatorId"])
+    .index("by_product", ["productId"])
+    .index("by_status", ["status"])
+    .index("by_creator_status", ["creatorId", "status"]),
+
+  /**
+   * Revenue Transactions Table
+   *
+   * Tracks subscription revenue for profit sharing calculations.
+   */
+  revenueTransactions: defineTable({
+    // Transaction source
+    userId: v.string(),
+    productId: v.string(),
+    transactionId: v.string(),
+
+    // Revenue details
+    grossRevenue: v.number(),
+    appStoreFee: v.number(),
+    revenuecatFee: v.number(),
+    netRevenue: v.number(),
+
+    // Profit split
+    platformShare: v.number(),
+    creatorPoolShare: v.number(),
+
+    // Currency
+    currency: v.string(),
+    exchangeRate: v.optional(v.number()),
+
+    // Period tracking
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    isRenewal: v.boolean(),
+
+    // Timestamps
+    timestamp: v.number(),
+    processedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_transaction", ["transactionId"])
+    .index("by_period", ["periodStart", "periodEnd"])
+    .index("by_timestamp", ["timestamp"]),
+
+  /**
+   * Creator Payouts Table
+   *
+   * Tracks monthly payouts to creators based on RES.
+   */
+  creatorPayouts: defineTable({
+    // Creator relationship
+    creatorId: v.id("creatorProfiles"),
+
+    // Payout period
+    periodStart: v.number(),
+    periodEnd: v.number(),
+    periodLabel: v.string(),
+
+    // Engagement metrics
+    totalRES: v.number(),
+    platformTotalRES: v.number(),
+    resShare: v.number(),
+
+    // Revenue calculation
+    creatorPoolAmount: v.number(),
+    subscriptionPayout: v.number(),
+    shopPayout: v.number(),
+    totalPayout: v.number(),
+
+    // Payment details
+    status: payoutStatus,
+    paymentMethod: v.optional(v.string()),
+    paymentId: v.optional(v.string()),
+    paidAt: v.optional(v.number()),
+
+    // Error handling
+    failureReason: v.optional(v.string()),
+    retryCount: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_creator", ["creatorId"])
+    .index("by_period", ["periodStart", "periodEnd"])
+    .index("by_status", ["status"])
+    .index("by_creator_period", ["creatorId", "periodStart"]),
+
+  /**
+   * Recipe Engagement Table
+   *
+   * Tracks engagement metrics for recipes to calculate creator payouts.
+   */
+  recipeEngagement: defineTable({
+    // Recipe and creator
+    recipeId: v.id("recipes"),
+    creatorId: v.id("creatorProfiles"),
+
+    // Time period (daily aggregation)
+    date: v.string(),
+
+    // Engagement metrics
+    saves: v.number(),
+    cooks: v.number(),
+    shares: v.number(),
+    ratings: v.number(),
+    exclusiveViews: v.number(),
+
+    // Calculated RES for the day
+    engagementScore: v.number(),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_recipe", ["recipeId"])
+    .index("by_creator", ["creatorId"])
+    .index("by_date", ["date"])
+    .index("by_recipe_date", ["recipeId", "date"])
+    .index("by_creator_date", ["creatorId", "date"]),
+
+  /**
+   * Recipe Attribution Table
+   *
+   * Links recipes to creator profiles for engagement tracking.
+   */
+  recipeAttribution: defineTable({
+    // Recipe relationship
+    recipeId: v.id("recipes"),
+
+    // Creator relationship
+    creatorId: v.id("creatorProfiles"),
+    youtubeChannelId: v.string(),
+
+    // Source tracking
+    youtubeVideoId: v.optional(v.string()),
+    sourceUrl: v.optional(v.string()),
+
+    // Attribution details
+    isExclusive: v.boolean(),
+    exclusiveUntil: v.optional(v.number()),
+
+    // Timestamps
+    attributedAt: v.number(),
+  })
+    .index("by_recipe", ["recipeId"])
+    .index("by_creator", ["creatorId"])
+    .index("by_youtube_channel", ["youtubeChannelId"]),
+
+  /**
+   * Creator Messages Table
+   *
+   * Stores messages sent by creators to their followers.
+   * Messages are sent via OneSignal push notifications.
+   */
+  creatorMessages: defineTable({
+    // Creator relationship
+    creatorId: v.id("creatorProfiles"),
+
+    // Message content
+    title: v.string(), // Max 50 characters
+    body: v.string(), // Max 300 characters
+
+    // Delivery tracking
+    status: messageStatus,
+    onesignalNotificationId: v.optional(v.string()),
+    estimatedRecipients: v.number(),
+
+    // Error tracking (for failed messages)
+    errorMessage: v.optional(v.string()),
+
+    // Timestamps
+    sentAt: v.number(),
+  })
+    .index("by_creator", ["creatorId"])
+    .index("by_creator_sent", ["creatorId", "sentAt"]),
 });

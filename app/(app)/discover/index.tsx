@@ -25,11 +25,16 @@ import {
   Users,
   Star,
   ChefHat,
+  LayoutGrid,
+  List,
+  Settings,
 } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 
 import {
   ChannelCard,
   VideoCard,
+  SpotlightCard,
   CategoryChip,
   VideoPlayerModal,
   YouTubeRecipePreviewModal,
@@ -38,10 +43,12 @@ import {
   type FeedVideoData,
   type Category,
   type ViewMode,
+  type FeedViewMode,
   type ChannelFilter,
   type ChannelCategory,
 } from "@/components/discover";
 import { TabBar } from "@/components/navigation";
+import { DigeroLogo } from "@/components/brand";
 
 /**
  * Available categories for filtering
@@ -72,9 +79,13 @@ function mapCategoryIdToName(id: string): ChannelCategory | null {
 
 export default function DiscoverScreen() {
   const router = useRouter();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   // View state
   const [viewMode, setViewMode] = useState<ViewMode>("channels");
+  const [feedViewMode, setFeedViewMode] = useState<FeedViewMode>("list");
+  const [channelViewMode, setChannelViewMode] = useState<FeedViewMode>("list");
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,7 +113,7 @@ export default function DiscoverScreen() {
   // Convex queries
   const followedChannels = useQuery(api.channels.getFollowedChannels);
   const featuredChannels = useQuery(api.channels.getFeaturedChannels, {
-    limit: 10,
+    limit: 20,
   });
   const allChannels = useQuery(api.channels.getAllChannels, { limit: 50 });
   const followedCount = useQuery(api.channels.getFollowedChannelCount);
@@ -122,6 +133,9 @@ export default function DiscoverScreen() {
   );
   const refreshVideosAction = useAction(
     api.actions.youtube.cacheChannelVideos.refreshFollowedChannelVideos
+  );
+  const refreshChannelBannerAction = useAction(
+    api.actions.youtube.refreshChannelBanner.refreshChannelBanner
   );
 
   // State for video refresh
@@ -155,6 +169,7 @@ export default function DiscoverScreen() {
       youtubeChannelId: channel.youtubeChannelId,
       name: channel.name,
       avatarUrl: channel.avatarUrl,
+      bannerUrl: channel.bannerUrl,
       subscriberCount: channel.subscriberCount,
       description: channel.description,
       videoCount: channel.videoCount,
@@ -173,6 +188,7 @@ export default function DiscoverScreen() {
       youtubeChannelId: channel.youtubeChannelId,
       name: channel.name,
       avatarUrl: channel.avatarUrl,
+      bannerUrl: channel.bannerUrl,
       subscriberCount: channel.subscriberCount,
       description: channel.description,
       videoCount: channel.videoCount,
@@ -191,6 +207,7 @@ export default function DiscoverScreen() {
       youtubeChannelId: channel.youtubeChannelId,
       name: channel.name,
       avatarUrl: channel.avatarUrl,
+      bannerUrl: channel.bannerUrl,
       subscriberCount: channel.subscriberCount,
       description: channel.description,
       videoCount: channel.videoCount,
@@ -241,6 +258,54 @@ export default function DiscoverScreen() {
     return channels.filter((channel) => !channel.isFollowing).slice(0, 10);
   }, [channels]);
 
+  // Spotlight channel - Eitan Bernath (check in followed channels first, then all)
+  const spotlightChannel = useMemo(() => {
+    const searchName = "eitan bernath";
+    // First check followed channels
+    const fromFollowed = followedChannelsList.find(
+      (channel) => channel.name.toLowerCase().includes(searchName)
+    );
+    if (fromFollowed) return fromFollowed;
+    // Then check all channels
+    return channels.find(
+      (channel) => channel.name.toLowerCase().includes(searchName)
+    );
+  }, [followedChannelsList, channels]);
+
+  // Query creator profile for spotlight channel to check partnership status
+  const spotlightCreatorProfile = useQuery(
+    api.creator.getCreatorByChannel,
+    spotlightChannel?.youtubeChannelId
+      ? { youtubeChannelId: spotlightChannel.youtubeChannelId }
+      : "skip"
+  );
+
+  // Query creator's products for spotlight channel
+  const spotlightCreatorProducts = useQuery(
+    api.creatorShop.getProducts,
+    spotlightCreatorProfile?._id ? { creatorId: spotlightCreatorProfile._id } : "skip"
+  );
+
+  // Check if spotlight creator is a partner with a shop
+  const spotlightIsPartner =
+    spotlightCreatorProfile?.tier === "partner" &&
+    spotlightCreatorProfile?.applicationStatus === "approved";
+  const spotlightHasShop =
+    spotlightCreatorProfile?.applicationStatus === "approved" &&
+    spotlightCreatorProducts &&
+    spotlightCreatorProducts.length > 0;
+
+  // Auto-refresh spotlight channel banner if missing
+  useEffect(() => {
+    if (spotlightChannel && !spotlightChannel.bannerUrl) {
+      refreshChannelBannerAction({
+        youtubeChannelId: spotlightChannel.youtubeChannelId,
+      }).catch((error) => {
+        console.error("Failed to refresh spotlight banner:", error);
+      });
+    }
+  }, [spotlightChannel?.youtubeChannelId, spotlightChannel?.bannerUrl, refreshChannelBannerAction]);
+
   // Debounced search
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -263,6 +328,7 @@ export default function DiscoverScreen() {
             youtubeChannelId: channel.channelId,
             name: channel.name,
             avatarUrl: channel.avatarUrl,
+            bannerUrl: channel.bannerUrl,
             subscriberCount: channel.subscriberCount,
             description: channel.description,
             videoCount: channel.videoCount,
@@ -361,6 +427,7 @@ export default function DiscoverScreen() {
           youtubeChannelId: channel.youtubeChannelId,
           name: channel.name,
           avatarUrl: channel.avatarUrl,
+          bannerUrl: channel.bannerUrl,
           subscriberCount: channel.subscriberCount,
           description: channel.description,
           videoCount: channel.videoCount,
@@ -450,11 +517,12 @@ export default function DiscoverScreen() {
     ({ item }: { item: FeedVideoData }) => (
       <VideoCard
         video={item}
+        viewMode={feedViewMode}
         onPress={() => handleVideoPress(item)}
         onSaveRecipe={() => handleSaveRecipe(item.videoId)}
       />
     ),
-    [handleVideoPress, handleSaveRecipe]
+    [handleVideoPress, handleSaveRecipe, feedViewMode]
   );
 
   // Empty feed state
@@ -464,7 +532,7 @@ export default function DiscoverScreen() {
       return (
         <View className="flex-1 items-center justify-center py-20">
           <ActivityIndicator size="large" color="#f97316" />
-          <Text className="text-stone-400 mt-4">Loading videos from your channels...</Text>
+          <Text className="text-stone-500 dark:text-stone-400 mt-4">Loading videos from your channels...</Text>
         </View>
       );
     }
@@ -473,13 +541,13 @@ export default function DiscoverScreen() {
     if (followedCount && followedCount > 0) {
       return (
         <View className="flex-1 items-center justify-center py-20">
-          <View className="w-20 h-20 bg-stone-800 rounded-full items-center justify-center mb-4">
+          <View className="w-20 h-20 bg-stone-200 dark:bg-stone-800 rounded-full items-center justify-center mb-4">
             <Video size={40} color="#78716c" />
           </View>
-          <Text className="text-lg font-semibold text-white mb-2">
+          <Text className="text-lg font-semibold text-stone-900 dark:text-white mb-2">
             Loading videos...
           </Text>
-          <Text className="text-stone-400 text-center px-8 mb-6">
+          <Text className="text-stone-500 dark:text-stone-400 text-center px-8 mb-6">
             Fetching latest videos from your {followedCount} followed channel{followedCount > 1 ? "s" : ""}
           </Text>
           <Pressable
@@ -495,13 +563,13 @@ export default function DiscoverScreen() {
     // Default: no followed channels
     return (
       <View className="flex-1 items-center justify-center py-20">
-        <View className="w-20 h-20 bg-stone-800 rounded-full items-center justify-center mb-4">
+        <View className="w-20 h-20 bg-stone-200 dark:bg-stone-800 rounded-full items-center justify-center mb-4">
           <Video size={40} color="#78716c" />
         </View>
-        <Text className="text-lg font-semibold text-white mb-2">
+        <Text className="text-lg font-semibold text-stone-900 dark:text-white mb-2">
           No videos yet
         </Text>
-        <Text className="text-stone-400 text-center px-8 mb-6">
+        <Text className="text-stone-500 dark:text-stone-400 text-center px-8 mb-6">
           Follow some channels to see their latest videos here
         </Text>
         <Pressable
@@ -525,9 +593,9 @@ export default function DiscoverScreen() {
         ) : (
           <Pressable
             onPress={handleLoadMore}
-            className="px-6 py-2 bg-stone-800 rounded-lg active:bg-stone-700"
+            className="px-6 py-2 bg-stone-200 dark:bg-stone-800 rounded-lg active:bg-stone-300 dark:active:bg-stone-700"
           >
-            <Text className="text-stone-400">Load More</Text>
+            <Text className="text-stone-600 dark:text-stone-400">Load More</Text>
           </Pressable>
         )}
       </View>
@@ -535,15 +603,24 @@ export default function DiscoverScreen() {
   }, [videoFeed, isLoadingMore, handleLoadMore]);
 
   return (
-    <View className="flex-1 bg-stone-950">
+    <View className="flex-1 bg-stone-50 dark:bg-stone-950">
       {/* Header */}
-      <View className="border-b border-stone-800 bg-stone-900 px-4 pb-4 pt-12">
+      <View className="border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-4 pb-4 pt-12">
         {/* Title Row */}
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-2xl font-bold text-white">Discover</Text>
-          <Text className="text-sm text-stone-400">
-            {followedCount ?? 0} following
-          </Text>
+          <DigeroLogo width={100} height={44} />
+          <View className="flex-row items-center gap-3">
+            <Text className="text-sm text-stone-500 dark:text-stone-400">
+              {followedCount ?? 0} following
+            </Text>
+            <Pressable
+              onPress={() => router.push("/(app)/settings")}
+              className="rounded-full p-2 active:bg-stone-100 dark:active:bg-stone-800"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Settings size={24} color={isDark ? "#a8a29e" : "#57534e"} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Search Bar */}
@@ -556,7 +633,7 @@ export default function DiscoverScreen() {
             onChangeText={setSearchQuery}
             placeholder="Search channels..."
             placeholderTextColor="#78716c"
-            className="w-full pl-10 pr-4 py-3 bg-stone-800 rounded-xl text-white"
+            className="w-full pl-10 pr-4 py-3 bg-stone-100 dark:bg-stone-800 rounded-xl text-stone-900 dark:text-white"
           />
           {isSearching && (
             <View className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -572,7 +649,7 @@ export default function DiscoverScreen() {
             className={`flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-lg ${
               viewMode === "feed"
                 ? "bg-orange-500"
-                : "bg-stone-800 active:bg-stone-700"
+                : "bg-stone-100 dark:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700"
             }`}
           >
             <Video
@@ -581,7 +658,7 @@ export default function DiscoverScreen() {
             />
             <Text
               className={`font-semibold ${
-                viewMode === "feed" ? "text-white" : "text-stone-400"
+                viewMode === "feed" ? "text-white" : "text-stone-500 dark:text-stone-400"
               }`}
             >
               Video Feed
@@ -592,7 +669,7 @@ export default function DiscoverScreen() {
             className={`flex-1 flex-row items-center justify-center gap-2 py-2.5 rounded-lg ${
               viewMode === "channels"
                 ? "bg-orange-500"
-                : "bg-stone-800 active:bg-stone-700"
+                : "bg-stone-100 dark:bg-stone-800 active:bg-stone-200 dark:active:bg-stone-700"
             }`}
           >
             <Users
@@ -601,7 +678,7 @@ export default function DiscoverScreen() {
             />
             <Text
               className={`font-semibold ${
-                viewMode === "channels" ? "text-white" : "text-stone-400"
+                viewMode === "channels" ? "text-white" : "text-stone-500 dark:text-stone-400"
               }`}
             >
               Channels
@@ -623,6 +700,39 @@ export default function DiscoverScreen() {
             renderItem={renderVideoCard}
             keyExtractor={(item) => item.videoId}
             contentContainerClassName="p-4"
+            ListHeaderComponent={
+              feedVideos.length > 0 ? (
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-sm text-stone-500 dark:text-stone-400">
+                    {feedVideos.length} video{feedVideos.length !== 1 ? "s" : ""}
+                  </Text>
+                  <View className="flex-row items-center rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-1">
+                    <Pressable
+                      onPress={() => setFeedViewMode("grid")}
+                      className={`rounded-md p-2 ${
+                        feedViewMode === "grid" ? "bg-orange-500" : ""
+                      }`}
+                    >
+                      <LayoutGrid
+                        size={16}
+                        color={feedViewMode === "grid" ? "#fff" : "#a8a29e"}
+                      />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setFeedViewMode("list")}
+                      className={`rounded-md p-2 ${
+                        feedViewMode === "list" ? "bg-orange-500" : ""
+                      }`}
+                    >
+                      <List
+                        size={16}
+                        color={feedViewMode === "list" ? "#fff" : "#a8a29e"}
+                      />
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null
+            }
             ListEmptyComponent={renderEmptyFeedState}
             ListFooterComponent={renderFeedFooter}
             onEndReached={handleLoadMore}
@@ -665,36 +775,63 @@ export default function DiscoverScreen() {
             ))}
           </ScrollView>
 
-          {/* Channel Filter Tabs */}
-          <View className="flex-row mx-4 mb-4 p-1 bg-stone-800 rounded-lg">
-            {[
-              { id: "all" as const, label: "All" },
-              {
-                id: "following" as const,
-                label: `Following (${followedCount ?? 0})`,
-              },
-              { id: "featured" as const, label: "Featured" },
-            ].map((filter) => (
-              <Pressable
-                key={filter.id}
-                onPress={() => setChannelFilter(filter.id)}
-                className={`flex-1 py-2 rounded-md ${
-                  channelFilter === filter.id
-                    ? "bg-stone-700"
-                    : ""
-                }`}
-              >
-                <Text
-                  className={`text-center text-sm font-medium ${
+          {/* Channel Filter Tabs and View Toggle */}
+          <View className="flex-row mx-4 mb-4 items-center gap-2">
+            <View className="flex-row flex-1 p-1 bg-stone-100 dark:bg-stone-800 rounded-lg">
+              {[
+                { id: "all" as const, label: "All" },
+                {
+                  id: "following" as const,
+                  label: `Following (${followedCount ?? 0})`,
+                },
+                { id: "featured" as const, label: "Featured" },
+              ].map((filter) => (
+                <Pressable
+                  key={filter.id}
+                  onPress={() => setChannelFilter(filter.id)}
+                  className={`flex-1 py-2 rounded-md ${
                     channelFilter === filter.id
-                      ? "text-white"
-                      : "text-stone-400"
+                      ? "bg-white dark:bg-stone-700"
+                      : ""
                   }`}
                 >
-                  {filter.label}
-                </Text>
+                  <Text
+                    className={`text-center text-sm font-medium ${
+                      channelFilter === filter.id
+                        ? "text-stone-900 dark:text-white"
+                        : "text-stone-500 dark:text-stone-400"
+                    }`}
+                  >
+                    {filter.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {/* View Mode Toggle */}
+            <View className="flex-row items-center rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-1">
+              <Pressable
+                onPress={() => setChannelViewMode("grid")}
+                className={`rounded-md p-2 ${
+                  channelViewMode === "grid" ? "bg-orange-500" : ""
+                }`}
+              >
+                <LayoutGrid
+                  size={16}
+                  color={channelViewMode === "grid" ? "#fff" : "#a8a29e"}
+                />
               </Pressable>
-            ))}
+              <Pressable
+                onPress={() => setChannelViewMode("list")}
+                className={`rounded-md p-2 ${
+                  channelViewMode === "list" ? "bg-orange-500" : ""
+                }`}
+              >
+                <List
+                  size={16}
+                  color={channelViewMode === "list" ? "#fff" : "#a8a29e"}
+                />
+              </Pressable>
+            </View>
           </View>
 
           {isLoading ? (
@@ -704,13 +841,26 @@ export default function DiscoverScreen() {
           ) : searchQuery.trim() ? (
             /* Search Results */
             <View className="px-4 pb-6">
-              <Text className="text-lg font-bold text-white mb-4">
+              <Text className="text-lg font-bold text-stone-900 dark:text-white mb-4">
                 {filteredChannels.length} Channel
                 {filteredChannels.length !== 1 ? "s" : ""} Found
               </Text>
               {filteredChannels.length === 0 ? (
                 <View className="items-center py-12">
-                  <Text className="text-stone-400">No channels found</Text>
+                  <Text className="text-stone-500 dark:text-stone-400">No channels found</Text>
+                </View>
+              ) : channelViewMode === "list" ? (
+                <View>
+                  {filteredChannels.map((channel) => (
+                    <ChannelCard
+                      key={channel.id}
+                      channel={channel}
+                      viewMode="list"
+                      onPress={() => handleChannelPress(channel.id)}
+                      onFollow={() => handleFollow(channel)}
+                      onUnfollow={() => handleUnfollow(channel.id)}
+                    />
+                  ))}
                 </View>
               ) : (
                 <View className="flex-row flex-wrap -mx-2">
@@ -718,6 +868,7 @@ export default function DiscoverScreen() {
                     <View key={channel.id} className="w-1/2 p-2">
                       <ChannelCard
                         channel={channel}
+                        viewMode="grid"
                         onPress={() => handleChannelPress(channel.id)}
                         onFollow={() => handleFollow(channel)}
                         onUnfollow={() => handleUnfollow(channel.id)}
@@ -730,7 +881,7 @@ export default function DiscoverScreen() {
           ) : channelFilter !== "all" || selectedCategory ? (
             /* Filtered Results */
             <View className="px-4 pb-6">
-              <Text className="text-lg font-bold text-white mb-4">
+              <Text className="text-lg font-bold text-stone-900 dark:text-white mb-4">
                 {filteredChannels.length} Channel
                 {filteredChannels.length !== 1 ? "s" : ""}
                 {selectedCategory &&
@@ -738,7 +889,20 @@ export default function DiscoverScreen() {
               </Text>
               {filteredChannels.length === 0 ? (
                 <View className="items-center py-12">
-                  <Text className="text-stone-400">No channels found</Text>
+                  <Text className="text-stone-500 dark:text-stone-400">No channels found</Text>
+                </View>
+              ) : channelViewMode === "list" ? (
+                <View>
+                  {filteredChannels.map((channel) => (
+                    <ChannelCard
+                      key={channel.id}
+                      channel={channel}
+                      viewMode="list"
+                      onPress={() => handleChannelPress(channel.id)}
+                      onFollow={() => handleFollow(channel)}
+                      onUnfollow={() => handleUnfollow(channel.id)}
+                    />
+                  ))}
                 </View>
               ) : (
                 <View className="flex-row flex-wrap -mx-2">
@@ -746,6 +910,7 @@ export default function DiscoverScreen() {
                     <View key={channel.id} className="w-1/2 p-2">
                       <ChannelCard
                         channel={channel}
+                        viewMode="grid"
                         onPress={() => handleChannelPress(channel.id)}
                         onFollow={() => handleFollow(channel)}
                         onUnfollow={() => handleUnfollow(channel.id)}
@@ -758,27 +923,63 @@ export default function DiscoverScreen() {
           ) : (
             /* Default View with Sections */
             <>
+              {/* Spotlight Section */}
+              {spotlightChannel && (
+                <View className="pt-4">
+                  <View className="flex-row items-center gap-2 px-4 mb-3">
+                    <View className="w-1 h-5 bg-orange-500 rounded-full" />
+                    <Text className="text-lg font-bold text-stone-900 dark:text-white">
+                      Creator Spotlight
+                    </Text>
+                  </View>
+                  <SpotlightCard
+                    channel={spotlightChannel}
+                    isPartner={spotlightIsPartner}
+                    hasShop={spotlightHasShop}
+                    onPress={() => handleChannelPress(spotlightChannel.id)}
+                    onFollow={() => handleFollow(spotlightChannel)}
+                    onUnfollow={() => handleUnfollow(spotlightChannel.id)}
+                  />
+                </View>
+              )}
+
               {/* Featured Creators Section */}
               {featuredChannelsList.length > 0 && (
                 <View className="px-4 mb-6">
                   <View className="flex-row items-center gap-2 mb-4">
                     <Star size={20} color="#f97316" fill="#f97316" />
-                    <Text className="text-lg font-bold text-white">
+                    <Text className="text-lg font-bold text-stone-900 dark:text-white">
                       Featured Creators
                     </Text>
                   </View>
-                  <View className="flex-row flex-wrap -mx-2">
-                    {featuredChannelsList.slice(0, 4).map((channel) => (
-                      <View key={channel.id} className="w-1/2 p-2">
+                  {channelViewMode === "list" ? (
+                    <View>
+                      {featuredChannelsList.map((channel) => (
                         <ChannelCard
+                          key={channel.id}
                           channel={channel}
+                          viewMode="list"
                           onPress={() => handleChannelPress(channel.id)}
                           onFollow={() => handleFollow(channel)}
                           onUnfollow={() => handleUnfollow(channel.id)}
                         />
-                      </View>
-                    ))}
-                  </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <View className="flex-row flex-wrap -mx-2">
+                      {featuredChannelsList.map((channel) => (
+                        <View key={channel.id} className="w-1/2 p-2">
+                          <ChannelCard
+                            channel={channel}
+                            viewMode="grid"
+                            onPress={() => handleChannelPress(channel.id)}
+                            onFollow={() => handleFollow(channel)}
+                            onUnfollow={() => handleUnfollow(channel.id)}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               )}
 
@@ -786,15 +987,28 @@ export default function DiscoverScreen() {
               <View className="px-4 pb-6">
                 <View className="flex-row items-center gap-2 mb-4">
                   <ChefHat size={20} color="#a8a29e" />
-                  <Text className="text-lg font-bold text-white">
+                  <Text className="text-lg font-bold text-stone-900 dark:text-white">
                     Suggested for You
                   </Text>
                 </View>
                 {suggestedChannels.length === 0 ? (
                   <View className="items-center py-12">
-                    <Text className="text-stone-400">
+                    <Text className="text-stone-500 dark:text-stone-400">
                       No suggestions available
                     </Text>
+                  </View>
+                ) : channelViewMode === "list" ? (
+                  <View>
+                    {suggestedChannels.map((channel) => (
+                      <ChannelCard
+                        key={channel.id}
+                        channel={channel}
+                        viewMode="list"
+                        onPress={() => handleChannelPress(channel.id)}
+                        onFollow={() => handleFollow(channel)}
+                        onUnfollow={() => handleUnfollow(channel.id)}
+                      />
+                    ))}
                   </View>
                 ) : (
                   <View className="flex-row flex-wrap -mx-2">
@@ -802,6 +1016,7 @@ export default function DiscoverScreen() {
                       <View key={channel.id} className="w-1/2 p-2">
                         <ChannelCard
                           channel={channel}
+                          viewMode="grid"
                           onPress={() => handleChannelPress(channel.id)}
                           onFollow={() => handleFollow(channel)}
                           onUnfollow={() => handleUnfollow(channel.id)}

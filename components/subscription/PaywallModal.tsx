@@ -2,7 +2,7 @@
  * Paywall Modal Component
  *
  * Full-screen modal that displays subscription options when user hits a limit.
- * Hard block - cannot be dismissed without taking action.
+ * Shows Plus vs Creator tier comparison with benefits.
  * Supports purchase flow and restore purchases.
  */
 
@@ -16,16 +16,25 @@ import {
   ScrollView,
   Linking,
 } from "react-native";
-import { X } from "lucide-react-native";
-import { ProductCard } from "./ProductCard";
+import { X, Check, Crown, Star } from "lucide-react-native";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { OfferingsResult } from "@/lib/revenuecat";
+import {
+  PLUS_PRICING,
+  CREATOR_PRICING,
+  TIER_BENEFITS,
+} from "@/lib/subscriptionTiers";
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type PaywallTrigger = "RECIPE_LIMIT_EXCEEDED" | "SCAN_LIMIT_EXCEEDED";
+export type PaywallTrigger =
+  | "RECIPE_LIMIT_EXCEEDED"
+  | "SCAN_LIMIT_EXCEEDED"
+  | "AI_CHAT_LIMIT_EXCEEDED";
+
+type SelectedTier = "plus" | "creator";
+type SelectedPeriod = "monthly" | "annual";
 
 interface PaywallModalProps {
   /** Whether the modal is visible */
@@ -38,21 +47,12 @@ interface PaywallModalProps {
   limit?: number;
   /** Days until scan limit resets (for scan limit trigger) */
   resetsInDays?: number;
+  /** Custom message to display */
+  customMessage?: string;
   /** Called when modal is dismissed */
   onDismiss: () => void;
   /** Called after successful purchase */
   onPurchaseSuccess?: () => void;
-}
-
-interface ProductOption {
-  identifier: string;
-  title: string;
-  priceString: string;
-  periodDescription: string;
-  isRecommended?: boolean;
-  hasFreeTrial?: boolean;
-  trialDescription?: string;
-  savingsBadge?: string;
 }
 
 // =============================================================================
@@ -65,29 +65,18 @@ export function PaywallModal({
   currentCount,
   limit,
   resetsInDays,
+  customMessage,
   onDismiss,
   onPurchaseSuccess,
 }: PaywallModalProps) {
   const { purchase, restore, isPremium } = useSubscription();
 
-  const [products, setProducts] = useState<ProductOption[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [isLoadingOfferings, setIsLoadingOfferings] = useState(true);
+  const [selectedTier, setSelectedTier] = useState<SelectedTier>("plus");
+  const [selectedPeriod, setSelectedPeriod] = useState<SelectedPeriod>("annual");
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  const { getOfferings } = useSubscription();
-
-  /**
-   * Load offerings on mount
-   */
-  useEffect(() => {
-    if (visible) {
-      loadOfferings();
-    }
-  }, [visible]);
 
   /**
    * If user becomes premium, show success and dismiss
@@ -101,91 +90,50 @@ export function PaywallModal({
         onDismiss();
       }, 1500);
     }
-  }, [isPremium, visible]);
+  }, [isPremium, visible, showSuccess, onPurchaseSuccess, onDismiss]);
 
-  const loadOfferings = async () => {
-    setIsLoadingOfferings(true);
-    setError(null);
-
-    try {
-      const offerings = await getOfferings();
-      if (offerings.current) {
-        const productOptions: ProductOption[] = [];
-
-        // Add monthly option
-        if (offerings.current.monthly) {
-          productOptions.push({
-            identifier: offerings.current.monthly.identifier,
-            title: "Monthly",
-            priceString: offerings.current.monthly.priceString,
-            periodDescription: "/month",
-          });
-        }
-
-        // Add annual option (recommended)
-        if (offerings.current.annual) {
-          const annual = offerings.current.annual;
-          const hasIntro = annual.introPrice !== null;
-          productOptions.push({
-            identifier: annual.identifier,
-            title: "Annual",
-            priceString: annual.priceString,
-            periodDescription: "/year",
-            isRecommended: true,
-            hasFreeTrial: hasIntro,
-            trialDescription: hasIntro ? "7-day free trial" : undefined,
-            savingsBadge: "Save 33%",
-          });
-        }
-
-        // Add lifetime option
-        if (offerings.current.lifetime) {
-          productOptions.push({
-            identifier: offerings.current.lifetime.identifier,
-            title: "Lifetime",
-            priceString: offerings.current.lifetime.priceString,
-            periodDescription: "one-time",
-          });
-        }
-
-        setProducts(productOptions);
-
-        // Default select the annual (recommended) option
-        const annualOption = productOptions.find((p) => p.isRecommended);
-        if (annualOption) {
-          setSelectedProduct(annualOption.identifier);
-        } else if (productOptions.length > 0) {
-          setSelectedProduct(productOptions[0].identifier);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load offerings:", err);
-      setError("Unable to load subscription options. Please try again.");
-    } finally {
-      setIsLoadingOfferings(false);
+  /**
+   * Reset state when modal opens
+   */
+  useEffect(() => {
+    if (visible) {
+      setSelectedTier("plus");
+      setSelectedPeriod("annual");
+      setError(null);
     }
+  }, [visible]);
+
+  const getProductId = (): string => {
+    if (selectedTier === "plus") {
+      return selectedPeriod === "monthly"
+        ? PLUS_PRICING.monthly.productId
+        : PLUS_PRICING.annual.productId;
+    }
+    return selectedPeriod === "monthly"
+      ? CREATOR_PRICING.monthly.productId
+      : CREATOR_PRICING.annual.productId;
   };
 
   const handlePurchase = async () => {
-    if (!selectedProduct) return;
+    const productId = getProductId();
 
     setIsPurchasing(true);
     setError(null);
 
     try {
-      const result = await purchase(selectedProduct);
+      const result = await purchase(productId);
 
       if (result.userCancelled) {
-        // User cancelled, do nothing
         return;
       }
 
       if (!result.success) {
         setError(result.error || "Purchase failed. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Purchase error:", err);
-      setError(err.message || "An error occurred. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "An error occurred. Please try again.";
+      setError(errorMessage);
     } finally {
       setIsPurchasing(false);
     }
@@ -203,15 +151,19 @@ export function PaywallModal({
       } else if (!result.hasPremium) {
         setError("No active subscription found to restore.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Restore error:", err);
-      setError(err.message || "Failed to restore purchases.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to restore purchases.";
+      setError(errorMessage);
     } finally {
       setIsRestoring(false);
     }
   };
 
   const getTriggerMessage = () => {
+    if (customMessage) {
+      return customMessage;
+    }
     if (trigger === "RECIPE_LIMIT_EXCEEDED") {
       return `You've reached the free limit of ${limit || 10} recipes.`;
     }
@@ -221,7 +173,21 @@ export function PaywallModal({
         : "";
       return `You've used all ${limit || 3} free scans this month${resetText}.`;
     }
+    if (trigger === "AI_CHAT_LIMIT_EXCEEDED") {
+      return "You've used all 5 free Sous Chef messages today.";
+    }
     return "Unlock unlimited access to all features.";
+  };
+
+  const getCurrentPrice = () => {
+    if (selectedTier === "plus") {
+      return selectedPeriod === "monthly"
+        ? PLUS_PRICING.monthly
+        : PLUS_PRICING.annual;
+    }
+    return selectedPeriod === "monthly"
+      ? CREATOR_PRICING.monthly
+      : CREATOR_PRICING.annual;
   };
 
   const isLoading = isPurchasing || isRestoring;
@@ -238,7 +204,7 @@ export function PaywallModal({
         <View className="px-6 pt-4 pb-2 flex-row items-center justify-between">
           <View className="w-10" />
           <Text className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-            Upgrade to Premium
+            Choose Your Plan
           </Text>
           <Pressable
             onPress={onDismiss}
@@ -260,7 +226,7 @@ export function PaywallModal({
                 <Text className="text-4xl">🎉</Text>
               </View>
               <Text className="text-xl font-bold text-stone-900 dark:text-stone-100">
-                Welcome to Premium!
+                Welcome to {selectedTier === "creator" ? "Creator" : "Plus"}!
               </Text>
               <Text className="text-stone-600 dark:text-stone-400 mt-2">
                 You now have unlimited access.
@@ -268,57 +234,189 @@ export function PaywallModal({
             </View>
           )}
 
-          {/* Loading Offerings */}
-          {isLoadingOfferings && !showSuccess && (
-            <View className="items-center justify-center py-20">
-              <ActivityIndicator size="large" color="#f97316" />
-              <Text className="text-stone-500 dark:text-stone-400 mt-4">
-                Loading options...
-              </Text>
-            </View>
-          )}
-
           {/* Main Content */}
-          {!isLoadingOfferings && !showSuccess && (
+          {!showSuccess && (
             <>
               {/* Value Proposition */}
-              <View className="items-center py-6">
-                <View className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 items-center justify-center mb-4">
-                  <Text className="text-3xl">🍳</Text>
+              <View className="items-center py-4">
+                <View className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 items-center justify-center mb-3">
+                  <Text className="text-2xl">🍳</Text>
                 </View>
-                <Text className="text-2xl font-bold text-stone-900 dark:text-stone-100 text-center">
-                  Unlimited Recipes & Scans
+                <Text className="text-xl font-bold text-stone-900 dark:text-stone-100 text-center">
+                  Unlimited Recipes & More
                 </Text>
-                <Text className="text-stone-600 dark:text-stone-400 text-center mt-2 px-4">
+                <Text className="text-stone-600 dark:text-stone-400 text-center mt-1 px-4">
                   {getTriggerMessage()}
                 </Text>
               </View>
 
-              {/* Features List */}
-              <View className="mb-6">
-                <FeatureItem text="Unlimited recipe storage" />
-                <FeatureItem text="Unlimited cookbook scans" />
-                <FeatureItem text="Priority support" />
+              {/* Tier Selection */}
+              <View className="flex-row gap-3 mb-4">
+                {/* Plus Tier Card */}
+                <Pressable
+                  onPress={() => setSelectedTier("plus")}
+                  className={`flex-1 p-4 rounded-xl border-2 ${
+                    selectedTier === "plus"
+                      ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30"
+                      : "border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900"
+                  }`}
+                >
+                  <View className="flex-row items-center gap-2 mb-2">
+                    <Star size={18} color={selectedTier === "plus" ? "#f97316" : "#78716c"} />
+                    <Text
+                      className={`font-bold ${
+                        selectedTier === "plus"
+                          ? "text-orange-600 dark:text-orange-400"
+                          : "text-stone-900 dark:text-stone-100"
+                      }`}
+                    >
+                      Plus
+                    </Text>
+                  </View>
+                  <Text className="text-xs text-stone-500 dark:text-stone-400 mb-2">
+                    Unlimited access
+                  </Text>
+                  <Text
+                    className={`font-bold ${
+                      selectedTier === "plus"
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-stone-900 dark:text-stone-100"
+                    }`}
+                  >
+                    {selectedPeriod === "monthly"
+                      ? PLUS_PRICING.monthly.priceDisplay
+                      : PLUS_PRICING.annual.priceDisplay}
+                    <Text className="text-xs font-normal text-stone-500">
+                      /{selectedPeriod === "monthly" ? "mo" : "yr"}
+                    </Text>
+                  </Text>
+                </Pressable>
+
+                {/* Creator Tier Card */}
+                <Pressable
+                  onPress={() => setSelectedTier("creator")}
+                  className={`flex-1 p-4 rounded-xl border-2 relative ${
+                    selectedTier === "creator"
+                      ? "border-orange-500 bg-orange-50 dark:bg-orange-950/30"
+                      : "border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900"
+                  }`}
+                >
+                  <View className="absolute -top-2.5 right-2 bg-orange-500 px-2 py-0.5 rounded-full">
+                    <Text className="text-xs font-bold text-white">BEST</Text>
+                  </View>
+                  <View className="flex-row items-center gap-2 mb-2">
+                    <Crown size={18} color={selectedTier === "creator" ? "#f97316" : "#78716c"} />
+                    <Text
+                      className={`font-bold ${
+                        selectedTier === "creator"
+                          ? "text-orange-600 dark:text-orange-400"
+                          : "text-stone-900 dark:text-stone-100"
+                      }`}
+                    >
+                      Creator
+                    </Text>
+                  </View>
+                  <Text className="text-xs text-stone-500 dark:text-stone-400 mb-2">
+                    Plus + exclusive perks
+                  </Text>
+                  <Text
+                    className={`font-bold ${
+                      selectedTier === "creator"
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-stone-900 dark:text-stone-100"
+                    }`}
+                  >
+                    {selectedPeriod === "monthly"
+                      ? CREATOR_PRICING.monthly.priceDisplay
+                      : CREATOR_PRICING.annual.priceDisplay}
+                    <Text className="text-xs font-normal text-stone-500">
+                      /{selectedPeriod === "monthly" ? "mo" : "yr"}
+                    </Text>
+                  </Text>
+                </Pressable>
               </View>
 
-              {/* Product Options */}
-              <View className="mb-6">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.identifier}
-                    identifier={product.identifier}
-                    title={product.title}
-                    priceString={product.priceString}
-                    periodDescription={product.periodDescription}
-                    isRecommended={product.isRecommended}
-                    hasFreeTrial={product.hasFreeTrial}
-                    trialDescription={product.trialDescription}
-                    savingsBadge={product.savingsBadge}
-                    isSelected={selectedProduct === product.identifier}
-                    onPress={() => setSelectedProduct(product.identifier)}
-                    disabled={isLoading}
+              {/* Period Toggle */}
+              <View className="flex-row bg-stone-200 dark:bg-stone-800 rounded-xl p-1 mb-4">
+                <Pressable
+                  onPress={() => setSelectedPeriod("monthly")}
+                  className={`flex-1 py-2 rounded-lg ${
+                    selectedPeriod === "monthly"
+                      ? "bg-white dark:bg-stone-700"
+                      : ""
+                  }`}
+                >
+                  <Text
+                    className={`text-center font-medium ${
+                      selectedPeriod === "monthly"
+                        ? "text-stone-900 dark:text-stone-100"
+                        : "text-stone-500 dark:text-stone-400"
+                    }`}
+                  >
+                    Monthly
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSelectedPeriod("annual")}
+                  className={`flex-1 py-2 rounded-lg flex-row items-center justify-center gap-1 ${
+                    selectedPeriod === "annual"
+                      ? "bg-white dark:bg-stone-700"
+                      : ""
+                  }`}
+                >
+                  <Text
+                    className={`text-center font-medium ${
+                      selectedPeriod === "annual"
+                        ? "text-stone-900 dark:text-stone-100"
+                        : "text-stone-500 dark:text-stone-400"
+                    }`}
+                  >
+                    Annual
+                  </Text>
+                  <View className="bg-green-500 px-1.5 py-0.5 rounded">
+                    <Text className="text-xs font-bold text-white">SAVE</Text>
+                  </View>
+                </Pressable>
+              </View>
+
+              {/* Benefits Comparison */}
+              <View className="bg-white dark:bg-stone-900 rounded-xl p-4 mb-4">
+                <Text className="font-semibold text-stone-900 dark:text-stone-100 mb-3">
+                  {selectedTier === "creator" ? "Creator" : "Plus"} includes:
+                </Text>
+                <View className="gap-2">
+                  <FeatureItem
+                    text="Unlimited recipe storage"
+                    included={true}
                   />
-                ))}
+                  <FeatureItem
+                    text="Unlimited cookbook scans"
+                    included={true}
+                  />
+                  <FeatureItem
+                    text="Unlimited Sous Chef AI"
+                    included={true}
+                  />
+                  <FeatureItem
+                    text="15% shop discount"
+                    included={true}
+                  />
+                  <FeatureItem
+                    text="Early access to creator recipes"
+                    included={selectedTier === "creator"}
+                    isCreatorOnly={true}
+                  />
+                  <FeatureItem
+                    text="Direct messaging with creators"
+                    included={selectedTier === "creator"}
+                    isCreatorOnly={true}
+                  />
+                  <FeatureItem
+                    text="Vote on future content"
+                    included={selectedTier === "creator"}
+                    isCreatorOnly={true}
+                  />
+                </View>
               </View>
 
               {/* Error Message */}
@@ -333,10 +431,10 @@ export function PaywallModal({
               {/* Purchase Button */}
               <Pressable
                 onPress={handlePurchase}
-                disabled={!selectedProduct || isLoading}
+                disabled={isLoading}
                 className={`
-                  py-4 rounded-xl items-center justify-center mb-4
-                  ${!selectedProduct || isLoading
+                  py-4 rounded-xl items-center justify-center mb-3
+                  ${isLoading
                     ? "bg-stone-300 dark:bg-stone-700"
                     : "bg-orange-500 active:bg-orange-600"
                   }
@@ -346,7 +444,8 @@ export function PaywallModal({
                   <ActivityIndicator color="#ffffff" />
                 ) : (
                   <Text className="text-white font-semibold text-lg">
-                    Continue
+                    Continue with {selectedTier === "creator" ? "Creator" : "Plus"} -{" "}
+                    {getCurrentPrice().priceDisplay}/{selectedPeriod === "monthly" ? "mo" : "yr"}
                   </Text>
                 )}
               </Pressable>
@@ -367,11 +466,9 @@ export function PaywallModal({
               </Pressable>
 
               {/* Legal Links */}
-              <View className="flex-row justify-center mt-4 space-x-4">
+              <View className="flex-row justify-center mt-3 space-x-4">
                 <Pressable
-                  onPress={() =>
-                    Linking.openURL("https://digero.app/terms")
-                  }
+                  onPress={() => Linking.openURL("https://digero.app/terms")}
                 >
                   <Text className="text-stone-400 text-sm underline">
                     Terms of Service
@@ -379,9 +476,7 @@ export function PaywallModal({
                 </Pressable>
                 <Text className="text-stone-400 text-sm mx-2">|</Text>
                 <Pressable
-                  onPress={() =>
-                    Linking.openURL("https://digero.app/privacy")
-                  }
+                  onPress={() => Linking.openURL("https://digero.app/privacy")}
                 >
                   <Text className="text-stone-400 text-sm underline">
                     Privacy Policy
@@ -400,13 +495,46 @@ export function PaywallModal({
 // Helper Components
 // =============================================================================
 
-function FeatureItem({ text }: { text: string }) {
+function FeatureItem({
+  text,
+  included,
+  isCreatorOnly = false,
+}: {
+  text: string;
+  included: boolean;
+  isCreatorOnly?: boolean;
+}) {
   return (
-    <View className="flex-row items-center mb-2">
-      <View className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 items-center justify-center mr-3">
-        <Text className="text-green-600 text-xs">✓</Text>
+    <View className="flex-row items-center">
+      <View
+        className={`w-5 h-5 rounded-full items-center justify-center mr-3 ${
+          included
+            ? "bg-green-100 dark:bg-green-900/30"
+            : "bg-stone-100 dark:bg-stone-800"
+        }`}
+      >
+        {included ? (
+          <Check size={12} color="#22c55e" />
+        ) : (
+          <X size={12} color="#a8a29e" />
+        )}
       </View>
-      <Text className="text-stone-700 dark:text-stone-300">{text}</Text>
+      <Text
+        className={`flex-1 ${
+          included
+            ? "text-stone-700 dark:text-stone-300"
+            : "text-stone-400 dark:text-stone-500"
+        }`}
+      >
+        {text}
+      </Text>
+      {isCreatorOnly && included && (
+        <View className="bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded">
+          <Text className="text-xs font-medium text-purple-600 dark:text-purple-400">
+            Creator
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
